@@ -1,0 +1,10 @@
+{
+  "name": "Haven Relay",
+  "short_name": "Haven",
+  "description": "A zero-typing, safety-routed recovery support prototype.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f3efe6",
+  "theme_color": "#174a43",
+  "icons": []
+}

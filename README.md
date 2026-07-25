@@ -1,7 +1,9 @@
 # Haven Relay
 
-**Status:** PromptWars implementation-ready decision brief; no application has
-been built in this repository.
+**Status:** working browser-only PromptWars application with deterministic
+safety routing, optional server-owned Gemini personalization, reviewed fallback,
+India national resources, tests, offline emergency shell, and Vercel deployment
+configuration.
 
 **Approach:** acute crisis-to-care relay.
 
@@ -127,10 +129,11 @@ The next high-load session can activate that plan in one tap.
 
 ## Minimum interfaces and data flow
 
-Proposed stack: Next.js and TypeScript, a server-owned Gemini Flash adapter, a
-static reviewed resource registry, browser speech input/output, and the native
-share sheet with copy fallback. No account or database is required for the
-competition MVP.
+Implemented stack: React and Vite, a server-owned Vercel function for Gemini
+structured output, a static reviewed resource registry, browser speech
+input/output, a service-worker emergency shell, and the native share sheet with
+copy fallback. No account, database, analytics SDK, camera, or location
+permission is used.
 
 ```text
 tap choices + optional bounded transcript
@@ -165,6 +168,24 @@ Minimum response:
   standard telemetry.
 - `DEMO_MODE=true` returns a clearly labelled reviewed fixture for the same
   input and output contract.
+
+## Run and verify
+
+Use Node.js 20 or later:
+
+```bash
+npm install
+npm run verify
+npm run dev
+```
+
+The application works without a model key and clearly labels its reviewed
+fallback. To enable live personalization, copy `.env.example` to `.env.local`
+and set `GEMINI_API_KEY`. The key is read only by `api/intervention.js`; never
+prefix it with `VITE_`.
+
+The full technical design, boundaries, benchmark mapping, contracts, deployment
+model, and decision log are in [`architecture.md`](architecture.md).
 
 ## Three-hour build blocks
 

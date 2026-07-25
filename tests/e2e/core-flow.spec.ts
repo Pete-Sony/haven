@@ -4,7 +4,7 @@ import { expect, test } from "@playwright/test";
 test("individual completes a zero-typing support journey", async ({ page }) => {
   await page.goto("/");
   await page.getByRole("button", { name: "Help for me" }).click();
-  await page.getByRole("button", { name: /Stress/ }).click();
+  await page.getByRole("button", { name: /Social pressure/ }).click();
   await page.getByRole("button", { name: /Check safety/ }).click();
   await page.getByRole("button", { name: /Show the next step/ }).click();
   await expect(
@@ -26,7 +26,11 @@ test("caregiver path is judge-visible", async ({ page }) => {
   ).toBeVisible();
   await page.getByRole("button", { name: /Check safety/ }).click();
   await page.getByRole("button", { name: /Show the next step/ }).click();
-  await expect(page.getByText(/Stay present/)).toBeVisible();
+  await expect(
+    page.getByRole("heading", {
+      name: "Stay present and offer one small choice.",
+    }),
+  ).toBeVisible();
 });
 
 test("prevention is a complete zero-typing, account-free journey", async ({
@@ -66,4 +70,45 @@ test("landing page has no automatically detectable critical accessibility violat
   expect(
     results.violations.filter((item) => item.impact === "critical"),
   ).toEqual([]);
+});
+
+test("saved support features require an account without gating urgent help", async ({
+  page,
+}) => {
+  await page.goto("/companion");
+  await expect(
+    page.getByRole("heading", {
+      name: "Sign in to start a private session.",
+    }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("link", { name: "Use immediate support" }),
+  ).toHaveAttribute("href", "/");
+
+  await page.goto("/onboarding");
+  await expect(
+    page.getByRole("heading", {
+      name: "Sign in only if you want to save this card.",
+    }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("link", { name: "Skip and use Haven" }),
+  ).toHaveAttribute("href", "/");
+});
+
+test("account page exposes email authentication when Google is disabled", async ({
+  page,
+}) => {
+  await page.goto("/auth?next=/onboarding");
+  await expect(
+    page.getByRole("heading", { name: "Sign in to Haven" }),
+  ).toBeVisible();
+  await expect(page.getByLabel("Email")).toBeVisible();
+  await expect(page.getByLabel("Password")).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Need an account? Create one" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("link", { name: "Continue with Google" }),
+  ).toHaveCount(0);
 });

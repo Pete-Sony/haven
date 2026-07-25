@@ -36,16 +36,27 @@ leak U.S. phone numbers or claims into the release.
 - The urgent and emergency journeys work without login.
 - The core prevention journey is account-free and stores data only after an
   explicit device-local save.
-- Optional Google OAuth and encrypted cross-device saving stay outside the
-  primary pitch and core journey.
+- Email authentication, optional Google OAuth, and encrypted cross-device
+  saving stay outside the primary pitch and core journey.
 - Supabase owns authentication and encrypted account data.
 - Gemini 3.6 Flash performs bounded context interpretation and wording.
 - Application code alone assigns risk tiers, actions, and resource IDs.
 - The public site and GitHub repository are public.
 - The first release is English (`en-IN`) only. Additional languages remain
   disabled until native safety and lived-experience review.
-- The product stores no crisis history, intervention history, raw audio,
-  transcript, diagnosis, medication data, or precise GPS location.
+- The product stores no automatic crisis or intervention history, raw audio,
+  transcript, generated script, diagnosis, medication data, or precise GPS
+  location.
+- A signed-in adult may explicitly save a bounded support-memory snapshot:
+  situation tags, one allowlisted action, and `helpful` or `not_helpful`.
+  Memories are encrypted, expire after 90 days, and are never shared across
+  individual and caregiver contexts.
+- A signed-in adult may save one encrypted, non-diagnostic Support Card with
+  general calm-time preferences. It contains no substance history and never
+  participates in acute safety routing.
+- A signed-in adult may start a four-turn Voice Companion. Its bounded audio,
+  visible transcript, and in-memory turns are used only for the current session
+  and are never persisted.
 - There is no analytics, advertising, automated messaging, monitoring, contact
   scraping, background microphone, camera, or location permission.
 
@@ -65,6 +76,8 @@ leak U.S. phone numbers or claims into the release.
    trusted-contact details.
 10. Optimize first for Problem Statement Alignment and Code Quality, the two
     highest-impact evaluation areas.
+11. Personalize from at most two matching user-confirmed support memories
+    without turning Haven into a longitudinal health record.
 
 ### 3.2 Non-goals
 
@@ -72,8 +85,8 @@ leak U.S. phone numbers or claims into the release.
   selection, medication, dosage, taper, or detox advice.
 - Autonomous calling, dispatch, message delivery, provider booking, location
   sharing, or caregiver monitoring.
-- A chatbot, long conversation, AI memory, social feed, treatment inventory,
-  live map, or longitudinal recovery record.
+- An open-ended chatbot, autonomous AI memory, social feed, treatment
+  inventory, live map, or longitudinal recovery record.
 - Minors, clinical-effectiveness claims, regulatory-compliance claims, or a
   real-world clinical release.
 - Machine-translated emergency guidance without qualified review.
@@ -105,7 +118,9 @@ Adult seeking support ─┐
                        ├── HTTPS ──> Haven public web app
 Trusted supporter ─────┘                   │
                                           ├── deterministic safety policy
-                                          ├── fixed India resource registry
+                                          ├── two-lane bounded retrieval
+                                          │     ├── reviewed education
+                                          │     └── consented support memory
                                           ├── optional bounded audio capture
                                           ├── read/copy/call/share adapters
                                           └── optional account workspace
@@ -117,7 +132,7 @@ Trusted supporter ─────┘                   │
                               │                                         │
                    ┌──────────┴──────────┐                              ▼
                    ▼                     ▼                     Supabase Postgres
-            Gemini 3.6 Flash       deterministic fallback       encrypted plan/contact
+            Gemini 3.6 Flash       deterministic fallback       encrypted plan/contact/memory
 ```
 
 External calls are limited to Gemini generation, Supabase authentication/data,
@@ -156,13 +171,13 @@ The exact deployed source must match the public GitHub `main` commit.
 
 ### 6.3 External services
 
-| Service           | Responsibility                                                  | Data boundary                                                                                                                                           |
-| ----------------- | --------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Gemini API        | Context interpretation and bounded wording                      | Structured selections, optional short audio, relationship label, reviewed source claims; never phone number, contact name, precise location, or history |
-| Supabase Auth     | Google OAuth and session identity                               | Google basic identity scopes only                                                                                                                       |
-| Supabase Postgres | User-owned calm plan and contacts                               | Encrypted contact name, phone, and safe-place label; structured non-sensitive preferences                                                               |
-| Sites             | Next.js runtime, environment secrets, production versions, logs | Technical runtime metadata; application must not log user content                                                                                       |
-| GitHub            | Public source history                                           | No credentials, environment values, generated builds, or user data                                                                                      |
+| Service           | Responsibility                                                  | Data boundary                                                                                                                                                                                                      |
+| ----------------- | --------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Gemini API        | Context interpretation and bounded wording                      | Structured selections, optional short audio, relationship label, one reviewed claim, and at most two sanitized support preferences; never phone number, contact name, precise location, raw history, or timestamps |
+| Supabase Auth     | Google OAuth and session identity                               | Google basic identity scopes only                                                                                                                                                                                  |
+| Supabase Postgres | User-owned calm plan, contacts, and support memories            | Encrypted contact data and structured support-memory payloads; cleartext ownership, consent version, creation, and expiry metadata only                                                                            |
+| Sites             | Next.js runtime, environment secrets, production versions, logs | Technical runtime metadata; application must not log user content                                                                                                                                                  |
+| GitHub            | Public source history                                           | No credentials, environment values, generated builds, or user data                                                                                                                                                 |
 
 ## 7. Information architecture and journeys
 
@@ -183,6 +198,9 @@ The exact deployed source must match the public GitHub `main` commit.
 
 | Route            | Purpose                                                        |
 | ---------------- | -------------------------------------------------------------- |
+| `/auth`          | Email/password and optional Google account access              |
+| `/onboarding`    | Create, review, update, or erase the Support Card              |
+| `/companion`     | Run a bounded, non-persistent Voice Companion session          |
 | `/account`       | Saved plan, trusted contacts, export, sign-out, delete account |
 | `/auth/callback` | Supabase PKCE code exchange and safe redirect                  |
 
@@ -221,6 +239,8 @@ acknowledged.
    speakable script, a support-message draft, and one reviewed source card.
 6. Read, hear, copy, or review the draft before opening an external app.
 7. Keep **Something changed / Call 112** visible.
+8. Optionally tap **This helped** or **Not for me** to save one encrypted,
+   90-day support memory. No result content is saved automatically.
 
 ### 7.5 Caregiver journey
 
@@ -293,8 +313,10 @@ signal. Return at most three non-medical actions and a support-person draft.
 - The client policy routes synchronously.
 - The server independently re-runs the safety policy.
 - The normal intervention endpoint rejects emergency-bearing input.
+- Emergency routes bypass both retrieval lanes.
 - The model receives only the tier, allowed action IDs, and one selected
-  educational source; service IDs remain outside the prompt.
+  educational source plus at most two sanitized personal preferences; service
+  IDs remain outside the prompt.
 - Any output that changes action/resource authority is rejected.
 - Voice-derived danger makes the model return a null intervention, then the
   server reruns deterministic routing before any normal content is returned.
@@ -364,19 +386,22 @@ interface ExternalActionState {
 
 ### 9.1 Server endpoints
 
-| Endpoint                           | Contract                                                                                                                                                |
-| ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `POST /api/interventions`          | Bounded multipart request with serialized `SafetyInput` and optional audio; returns validated `InterventionResult`, `safety_recheck`, or typed fallback |
-| `POST /api/emergency-script`       | Optional post-render wording assistance using confirmed facts and a fixed emergency decision                                                            |
-| `GET /api/account/plan`            | Return the authenticated user's decrypted plan                                                                                                          |
-| `PUT /api/account/plan`            | Validate, encrypt, and upsert one active plan                                                                                                           |
-| `DELETE /api/account/plan`         | Delete the active plan                                                                                                                                  |
-| `GET /api/account/contacts`        | Return decrypted user-owned contacts                                                                                                                    |
-| `POST /api/account/contacts`       | Validate, encrypt, and create a contact                                                                                                                 |
-| `PATCH /api/account/contacts/:id`  | Update an authenticated user-owned contact                                                                                                              |
-| `DELETE /api/account/contacts/:id` | Delete an authenticated user-owned contact                                                                                                              |
-| `DELETE /api/account`              | Cascade-delete saved data and Supabase identity                                                                                                         |
-| `GET /api/health`                  | Release SHA and dependency readiness without secret values                                                                                              |
+| Endpoint                               | Contract                                                                                                                                                |
+| -------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `POST /api/interventions`              | Bounded multipart request with serialized `SafetyInput` and optional audio; returns validated `InterventionResult`, `safety_recheck`, or typed fallback |
+| `POST /api/emergency-script`           | Optional post-render wording assistance using confirmed facts and a fixed emergency decision                                                            |
+| `GET /api/account/plan`                | Return the authenticated user's decrypted plan                                                                                                          |
+| `PUT /api/account/plan`                | Validate, encrypt, and upsert one active plan                                                                                                           |
+| `DELETE /api/account/plan`             | Delete the active plan                                                                                                                                  |
+| `GET /api/account/contacts`            | Return decrypted user-owned contacts                                                                                                                    |
+| `POST /api/account/contacts`           | Validate, encrypt, and create a contact                                                                                                                 |
+| `PATCH /api/account/contacts/:id`      | Update an authenticated user-owned contact                                                                                                              |
+| `DELETE /api/account/contacts/:id`     | Delete an authenticated user-owned contact                                                                                                              |
+| `GET /api/account/support-memories`    | List the authenticated user’s unexpired, decrypted support-memory snapshots                                                                             |
+| `POST /api/account/support-memories`   | Explicitly save one bounded encrypted memory with a 90-day expiry; same-origin and maximum-20 checks apply                                              |
+| `DELETE /api/account/support-memories` | Delete one authenticated user-owned support memory                                                                                                      |
+| `DELETE /api/account`                  | Cascade-delete saved data and Supabase identity                                                                                                         |
+| `GET /api/health`                      | Release SHA and dependency readiness without secret values                                                                                              |
 
 All writes require expected origin, authenticated ownership where applicable,
 bounded bodies, runtime schemas, and typed errors. Stack traces and provider
@@ -408,6 +433,8 @@ Inputs:
 - the application-owned tier and action allowlist, excluding resource IDs;
 - permitted action labels;
 - exactly one route-selected approved source claim;
+- zero to two relevant, unexpired, user-confirmed support memories containing
+  only situation IDs, an allowlisted action ID, and helpfulness;
 - relationship label, language, and tone.
 
 Outputs:
@@ -426,6 +453,12 @@ with danger is rejected. Application code merges the signal with tapped
 signals, reruns deterministic routing, and renders the fixed 112 route. The
 model cannot return phone numbers, URLs, diagnoses, external action status, or
 free-form action identifiers.
+
+Educational evidence is the only factual grounding lane. Personal memory is
+preference data: it may affect wording or the order of already allowed actions,
+but cannot add or remove actions, suppress human support, change safety
+routing, or support a health claim. Caregiver requests never retrieve the
+individual account’s personal memories.
 
 ### 10.3 Semantic validator
 
@@ -503,11 +536,21 @@ than replaces the national pack:
 Expired, disabled, unreviewed, or unknown records cannot render or enter model
 context. Release verification rechecks the official government pages.
 
+### 11.3 Retrieval policy
+
+Version 1 uses deterministic metadata filtering rather than open-web search or
+vector similarity. The educational lane returns exactly one approved claim for
+the role and non-emergency tier. This keeps relevance inspectable and prevents
+embedding similarity from laundering an irrelevant but real health source into
+the prompt. The corpus can grow, but every added chunk still requires an exact
+source ID, approved claim, permitted roles and tiers, review date, and expiry.
+
 ## 12. Authentication and account lifecycle
 
-### 12.1 Google OAuth
+### 12.1 Email and Google authentication
 
-Supabase manages Google OAuth using PKCE and cookie-based SSR sessions.
+Supabase manages email/password sessions and optional Google OAuth using PKCE
+and cookie-based SSR sessions.
 
 - Request only `openid`, `email`, and `profile`.
 - Do not request Google Contacts.
@@ -563,7 +606,27 @@ account.
 | `key_version smallint`     | Encryption-key version                        |
 | `created_at`, `updated_at` | Server timestamps                             |
 
-### 13.3 Shared request-budget state
+### 13.3 `support_memories`
+
+| Column                         | Purpose                                                 |
+| ------------------------------ | ------------------------------------------------------- |
+| `id uuid primary key`          | Random identifier                                       |
+| `user_id uuid`                 | References `auth.users(id) on delete cascade`           |
+| `ciphertext`, `iv`, `auth_tag` | Encrypted validated memory payload                      |
+| `key_version smallint`         | Encryption-key version                                  |
+| `consent_version text`         | Exact explicit-save contract; currently `1.0`           |
+| `expires_at`                   | Automatic 90-day retrieval and retention boundary       |
+| `created_at`                   | Server timestamp used only for bounded recency ordering |
+
+The encrypted payload contains only situation IDs, one allowlisted action ID,
+`helpful` or `not_helpful`, and its consent, save, and expiry metadata. There is
+no free text, audio, transcript, generated intervention, diagnosis, medication,
+substance, precise location, caregiver observation, or external action result.
+Each account may retain at most 20 unexpired memories.
+Supabase Cron permanently deletes expired rows daily; account data access also
+purges the current user’s expired rows before listing or saving.
+
+### 13.4 Shared request-budget state
 
 The RLS-enabled `public.request_budgets` table has no direct anonymous or
 authenticated table grants. An atomic, narrowly validated security-definer RPC
@@ -581,7 +644,7 @@ unbounded cost. An in-process budget is retained only for local development
 without Supabase. If configured shared storage fails, live personalization
 fails closed to the complete deterministic fallback.
 
-### 13.4 Row-level security
+### 13.5 Row-level security
 
 Every exposed table has RLS enabled and explicit `authenticated` policies:
 
@@ -595,8 +658,8 @@ privileges. The service role exists only in Sites server secrets.
 
 ## 14. Sensitive-field encryption
 
-Contact names, phone numbers, and safe-place labels use server-side
-AES-256-GCM through Web Crypto.
+Contact names, phone numbers, safe-place labels, and structured support-memory
+payloads use server-side AES-256-GCM.
 
 - `CONTACT_DATA_KEY_V1` is a 32-byte secret in Sites.
 - Every encrypted field gets a new random 96-bit IV.
@@ -618,15 +681,16 @@ a validated placeholder after generation.
 
 - Supabase identity required for OAuth.
 - User-confirmed calm-plan selections.
+- Explicitly saved support-memory snapshots for at most 90 days.
 - Encrypted contact name and phone.
 - Encrypted non-precise safe-place label.
 - Technical creation/update timestamps.
 
 ### 15.2 Not stored
 
-- Crisis selections, interventions, generated scripts, audio, transcript,
-  location, diagnosis, medication, substance history, share contents, or
-  call/message outcome.
+- Automatically captured crisis selections, interventions, generated scripts,
+  audio, transcript, location, diagnosis, medication, substance history,
+  caregiver observations, share contents, or call/message outcome.
 
 ### 15.3 Provider disclosure
 
@@ -654,18 +718,21 @@ Forbidden fields:
 
 ### 16.1 Threats and controls
 
-| Threat                            | Control                                                                                    |
-| --------------------------------- | ------------------------------------------------------------------------------------------ |
-| Modified client bypasses safety   | Server independently validates and routes; emergency input rejected from normal generation |
-| Prompt injection in audio         | Audio is untrusted data, no tools, fixed schemas, allowlisted IDs, semantic validation     |
-| Model hallucinates medical advice | Prohibited-content and faithfulness validator; atomic fallback                             |
-| IDOR/account data exposure        | Server user verification, RLS, ownership checks, encrypted sensitive fields                |
-| Contact data enters AI/logs       | Separate account and AI DTOs; redaction tests; no contact fields in prompt builder         |
-| Secret leaks to client/repo       | Server-only environment names, bundle scan, secret scan, `.env` ignore                     |
-| CSRF/open redirect                | SameSite cookies, origin checks, redirect allowlist                                        |
-| XSS                               | React text rendering, CSP, no unsafe HTML                                                  |
-| Abuse/cost exhaustion             | Body bounds, HMAC rate limiting, provider deadlines, no retries                            |
-| Stale resource                    | Verification dates, build-time expiry test, release recheck                                |
+| Threat                               | Control                                                                                            |
+| ------------------------------------ | -------------------------------------------------------------------------------------------------- |
+| Modified client bypasses safety      | Server independently validates and routes; emergency input rejected from normal generation         |
+| Prompt injection in audio            | Audio is untrusted data, no tools, fixed schemas, allowlisted IDs, semantic validation             |
+| Model hallucinates medical advice    | Prohibited-content and faithfulness validator; atomic fallback                                     |
+| IDOR/account data exposure           | Server user verification, RLS, ownership checks, encrypted sensitive fields                        |
+| Contact data enters AI/logs          | Separate account and AI DTOs; redaction tests; no contact fields in prompt builder                 |
+| Memory becomes covert tracking       | Explicit post-result tap, strict no-free-text schema, 90-day expiry, maximum 20, per-item deletion |
+| Cross-person memory disclosure       | Auth ownership plus RLS; caregiver mode receives an empty personal lane                            |
+| Personal preference overrides safety | Safety routing precedes retrieval; prompt and validator retain fixed action/source authority       |
+| Secret leaks to client/repo          | Server-only environment names, bundle scan, secret scan, `.env` ignore                             |
+| CSRF/open redirect                   | SameSite cookies, origin checks, redirect allowlist                                                |
+| XSS                                  | React text rendering, CSP, no unsafe HTML                                                          |
+| Abuse/cost exhaustion                | Body bounds, HMAC rate limiting, provider deadlines, no retries                                    |
+| Stale resource                       | Verification dates, build-time expiry test, release recheck                                        |
 
 ### 16.2 HTTP headers
 
@@ -744,7 +811,10 @@ Subsystem boundaries:
   CLS ≤ 0.1.
 - Initial route first-load JavaScript target: ≤ 200 KB gzip.
 - No client Supabase data query on public acute routes.
-- Source retrieval is a small static lookup, not a vector database.
+- Educational retrieval is a small deterministic static lookup; personal
+  retrieval decrypts at most 20 owned rows and supplies at most two matches.
+- No vector database, open-web retrieval, cross-user search, or embedding of
+  personal data.
 - No live web search, AI tool call, long history, provider retry loop, or
   duplicate model request.
 - Dynamic imports isolate account and audio code from the landing route.
@@ -758,6 +828,9 @@ Subsystem boundaries:
 - Urgent-support cases and caregiver-safety cases.
 - Deterministic emergency script uses only confirmed facts.
 - Resource allowlist, jurisdiction, expiry, and disabled status.
+- Emergency RAG bypass; exact educational retrieval; personal matching,
+  expiry, maximum-two context, and caregiver isolation.
+- Support-memory schema rejects free text and sensitive health/history fields.
 - Runtime schema bounds and exact keys.
 - Semantic validator: medical advice, false reassurance, confidence, invented
   source, prompt injection, PII, URL/phone, and action hallucination.

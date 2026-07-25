@@ -2034,3 +2034,71 @@ legend {
     transition-duration: 0.01ms !important;
   }
 }
+.support-memory-card {
+  align-items: center;
+  background: var(--surface, #fff);
+  border: 1px solid var(--line, #d8e0dc);
+  border-radius: 1.25rem;
+  display: flex;
+  gap: 1.5rem;
+  justify-content: space-between;
+  margin-top: 1.5rem;
+  padding: 1.25rem;
+}
+
+.support-memory-card h2,
+.support-memory-card p {
+  margin: 0.35rem 0 0;
+}
+
+.support-memory-actions {
+  display: flex;
+  flex-shrink: 0;
+  gap: 0.75rem;
+}
+
+.support-memory-actions button {
+  min-height: 48px;
+  white-space: nowrap;
+}
+
+.support-memory-list {
+  display: grid;
+  gap: 1rem;
+  margin: 1.5rem 0;
+}
+
+.support-memory-list article {
+  align-items: center;
+  border: 1px solid var(--line, #d8e0dc);
+  border-radius: 1rem;
+  display: flex;
+  justify-content: space-between;
+  padding: 1rem;
+}
+
+.support-memory-list p {
+  margin: 0.35rem 0;
+}
+
+.support-memory-list button {
+  min-height: 48px;
+}
+
+@media (max-width: 680px) {
+  .support-memory-card {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .support-memory-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .support-memory-list article {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 1rem;
+  }
+}

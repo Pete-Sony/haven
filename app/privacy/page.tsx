@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 
 export const metadata: Metadata = { title: "Privacy" };
 
@@ -14,12 +15,34 @@ export default function PrivacyPage() {
       </p>
       <h2>Optional account data</h2>
       <p>
-        If you choose Google sign-in, Haven stores only the account identifier
-        and the plan you explicitly save. Saved plan fields are encrypted by the
-        application before database storage.
+        If you create an account with email or optional Google sign-in, Haven
+        stores the account identifier and only the information you explicitly
+        save. Saved plan fields, your optional Support Card, and support
+        memories are encrypted by the application before database storage.
+      </p>
+      <p>
+        The Support Card contains general calm-time preferences, not a
+        diagnosis, substance history, medication record, or current risk
+        assessment. You can review, change, or erase it from{" "}
+        <Link href="/onboarding">My support card</Link>.
+      </p>
+      <p>
+        A support memory records only selected situation tags, the first action,
+        and whether you marked it “helpful” or “not for me.” It expires after 90
+        days. Haven retrieves at most two matching memories to adjust wording or
+        action order; a memory can never change emergency routing or serve as
+        medical evidence.
+      </p>
+      <p>
+        Voice Companion sessions stay in browser memory for at most four turns.
+        A short recording and the bounded visible session are sent only to
+        produce the current transcript and response; Haven does not save the
+        audio, transcript, or conversation to your account.
       </p>
       <h2>What we do not collect</h2>
       <ul>
+        <li>No automatic crisis or intervention history.</li>
+        <li>No saved audio, transcript, generated script, or diagnosis.</li>
         <li>No precise location permission.</li>
         <li>No camera access.</li>
         <li>No background monitoring.</li>
@@ -27,8 +50,12 @@ export default function PrivacyPage() {
       </ul>
       <h2>Your control</h2>
       <p>
-        You can use immediate support while signed out. Account deletion and
-        data export are release requirements before real-world clinical use.
+        You can use immediate support while signed out. Saving a Support Card or
+        support memory requires a separate action and a signed-in account. Saved
+        memories can be{" "}
+        <Link href="/account/memories">listed and deleted individually</Link>.
+        Account deletion and data export remain release requirements before
+        real-world clinical use.
       </p>
     </main>
   );

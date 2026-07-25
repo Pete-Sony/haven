@@ -1,6 +1,6 @@
 # Haven Production Hardening Plan
 
-**Status:** implementation complete pending final verification and deployment  
+**Status:** two-lane RAG implementation active; final verification and deployment pending  
 **Date:** 2026-07-25  
 **Product name:** Haven  
 **Release target:** public browser application for at least 100 initial users
@@ -13,17 +13,19 @@ release gates.
 
 ## Work plan and acceptance evidence
 
-| Workstream            | Implementation                                                                                                                                         | Acceptance evidence                                                                                      |
-| --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------- |
-| Voice danger          | One Gemini artifact extracts bounded facts; any danger signal requires a null intervention; server merges signals and reruns the pure safety router    | Voice danger and contradictory low-risk input tests route to emergency; no coping artifact can survive   |
-| One-call AI           | Context interpretation and normal intervention use one structured Gemini call                                                                          | Prompt contract test and provider code show one provider request                                         |
-| Exact grounding       | Each role supplies exactly one educational source; service IDs never enter the prompt; response must return that exact ID                              | Invented, real-but-irrelevant, duplicate, and cross-role source-laundering tests fail closed             |
-| Abuse and cost        | 1 MB audio ceiling, one call, seven-second deadline, no retry, audio cost 3, text cost 1, shared per-user windows, and a global daily provider ceiling | Pure budget tests plus atomic Supabase migration and live RPC check                                      |
-| Prevention            | `/prevent` provides trigger, first action, safer context, read/copy/speak, explicit local save, reset, and optional cross-device path                  | Playwright completes the flow without typing or authentication and verifies reload persistence           |
-| Caregiver distinction | Caregiver-specific framing, observable-not-diagnostic copy, source, fallback, and result label                                                         | Playwright and unit coverage prove the distinct route                                                    |
-| Provider failure      | Client and server deadlines return a labelled, complete reviewed fallback                                                                              | Timeout/rate-limit fallback reasons remain visible without blocking the journey                          |
-| Dependency security   | Oxlint replaces the vulnerable ESLint dependency tree; PostCSS and Sharp are patched                                                                   | Full `npm audit --audit-level=high` reports zero vulnerabilities                                         |
-| Production release    | Exact verified SHA is pushed to GitHub and Sites, deployed publicly, then smoke tested                                                                 | GitHub SHA, Sites version SHA, healthy public URL, security headers, and production journey checks match |
+| Workstream             | Implementation                                                                                                                                         | Acceptance evidence                                                                                         |
+| ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------- |
+| Voice danger           | One Gemini artifact extracts bounded facts; any danger signal requires a null intervention; server merges signals and reruns the pure safety router    | Voice danger and contradictory low-risk input tests route to emergency; no coping artifact can survive      |
+| One-call AI            | Context interpretation and normal intervention use one structured Gemini call                                                                          | Prompt contract test and provider code show one provider request                                            |
+| Exact grounding        | Each role supplies exactly one educational source; service IDs never enter the prompt; response must return that exact ID                              | Invented, real-but-irrelevant, duplicate, and cross-role source-laundering tests fail closed                |
+| Two-lane RAG           | Non-emergency requests retrieve one reviewed educational claim and at most two matching, unexpired, user-confirmed support memories                    | Emergency bypass, caregiver isolation, expiry, source authority, and sensitive-field rejection tests pass   |
+| Support memory consent | Signed-in adults explicitly tap “This helped” or “Not for me”; only structured context/action/helpfulness is encrypted for 90 days; maximum 20 records | No raw crisis content is stored; list/delete endpoint, RLS migration, UI disclosure, and privacy copy exist |
+| Abuse and cost         | 1 MB audio ceiling, one call, seven-second deadline, no retry, audio cost 3, text cost 1, shared per-user windows, and a global daily provider ceiling | Pure budget tests plus atomic Supabase migration and live RPC check                                         |
+| Prevention             | `/prevent` provides trigger, first action, safer context, read/copy/speak, explicit local save, reset, and optional cross-device path                  | Playwright completes the flow without typing or authentication and verifies reload persistence              |
+| Caregiver distinction  | Caregiver-specific framing, observable-not-diagnostic copy, source, fallback, and result label                                                         | Playwright and unit coverage prove the distinct route                                                       |
+| Provider failure       | Client and server deadlines return a labelled, complete reviewed fallback                                                                              | Timeout/rate-limit fallback reasons remain visible without blocking the journey                             |
+| Dependency security    | Oxlint replaces the vulnerable ESLint dependency tree; PostCSS and Sharp are patched                                                                   | Full `npm audit --audit-level=high` reports zero vulnerabilities                                            |
+| Production release     | Exact verified SHA is pushed to GitHub and Sites, deployed publicly, then smoke tested                                                                 | GitHub SHA, Sites version SHA, healthy public URL, security headers, and production journey checks match    |
 
 ## Reproducible release gates
 
@@ -53,6 +55,10 @@ full high-severity dependency audit, and an optimized production build.
 
 - Voice danger can reach normal coping output.
 - Gemini sees or returns a source outside the exact selected educational claim.
+- An emergency request reaches either RAG lane.
+- Personal memory adds/removes an action, supplies health evidence, crosses
+  into caregiver mode, persists beyond 90 days, or contains free text/raw
+  crisis content.
 - Emergency action waits for Gemini, authentication, Supabase, or a database.
 - Any high-severity dependency finding, type error, lint warning, test failure,
   secret-scan finding, build error, accessibility failure, or production smoke

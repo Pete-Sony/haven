@@ -1,5 +1,8 @@
 import { defineConfig, devices } from "@playwright/test";
 
+const testPort = 3100;
+const testBaseUrl = `http://127.0.0.1:${testPort}`;
+
 export default defineConfig({
   testDir: "./tests/e2e",
   fullyParallel: false,
@@ -7,14 +10,14 @@ export default defineConfig({
   retries: process.env.CI ? 1 : 0,
   reporter: "line",
   use: {
-    baseURL: "http://127.0.0.1:3000",
+    baseURL: testBaseUrl,
     trace: "retain-on-failure",
     screenshot: "only-on-failure",
   },
   webServer: {
-    command: "npm run dev -- --hostname 127.0.0.1",
-    url: "http://127.0.0.1:3000/api/health",
-    reuseExistingServer: !process.env.CI,
+    command: `HAVEN_E2E=1 npm run dev -- --hostname 127.0.0.1 --port ${testPort}`,
+    url: `${testBaseUrl}/api/health`,
+    reuseExistingServer: false,
     timeout: 60_000,
   },
   projects: [

@@ -1,7 +1,10 @@
 import { createCipheriv, createDecipheriv, randomBytes } from "node:crypto";
 
 const ALGORITHM = "aes-256-gcm";
-const AAD = Buffer.from("haven:v1", "utf8");
+
+function aad(context?: string): Buffer {
+  return Buffer.from(context ? `haven:v1:${context}` : "haven:v1", "utf8");
+}
 
 function encryptionKey(): Buffer {
   const encoded = process.env.HAVEN_DATA_ENCRYPTION_KEY;
@@ -18,10 +21,13 @@ export interface EncryptedValue {
   readonly keyVersion: 1;
 }
 
-export function encryptJson(value: unknown): EncryptedValue {
+export function encryptJson(
+  value: unknown,
+  aadContext?: string,
+): EncryptedValue {
   const iv = randomBytes(12);
   const cipher = createCipheriv(ALGORITHM, encryptionKey(), iv);
-  cipher.setAAD(AAD);
+  cipher.setAAD(aad(aadContext));
   const ciphertext = Buffer.concat([
     cipher.update(JSON.stringify(value), "utf8"),
     cipher.final(),
@@ -34,14 +40,14 @@ export function encryptJson(value: unknown): EncryptedValue {
   };
 }
 
-export function decryptJson<T>(value: EncryptedValue): T {
+export function decryptJson<T>(value: EncryptedValue, aadContext?: string): T {
   if (value.keyVersion !== 1) throw new Error("key_version_unsupported");
   const decipher = createDecipheriv(
     ALGORITHM,
     encryptionKey(),
     Buffer.from(value.iv, "base64"),
   );
-  decipher.setAAD(AAD);
+  decipher.setAAD(aad(aadContext));
   decipher.setAuthTag(Buffer.from(value.authTag, "base64"));
   const plaintext = Buffer.concat([
     decipher.update(Buffer.from(value.ciphertext, "base64")),

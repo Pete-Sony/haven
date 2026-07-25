@@ -9,8 +9,8 @@ export function GET(): NextResponse {
     aiConfigured: Boolean(process.env.GEMINI_API_KEY),
     accountsConfigured: Boolean(
       process.env.NEXT_PUBLIC_SUPABASE_URL &&
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY &&
-      process.env.GOOGLE_OAUTH_ENABLED === "true",
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
     ),
+    googleOAuthEnabled: process.env.GOOGLE_OAUTH_ENABLED === "true",
   });
 }

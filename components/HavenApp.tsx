@@ -598,16 +598,23 @@ function ResultStep({
   result,
   decision,
   role,
+  input,
+  personalMemoryUsed,
   reset,
   edit,
 }: {
   readonly result: InterventionResult;
   readonly decision: SafetyDecision;
   readonly role: Role;
+  readonly input: SafetyInput;
+  readonly personalMemoryUsed: boolean;
   readonly reset: () => void;
   readonly edit: () => void;
 }) {
   const [copied, setCopied] = useState(false);
+  const [memoryState, setMemoryState] = useState<
+    "idle" | "saving" | "saved" | "sign_in" | "failed"
+  >("idle");
   const resources = resolveResources(decision.resourceIds);
   const claim = result.sourceIds
     .map(
@@ -629,6 +636,30 @@ function ResultStep({
       setCopied(true);
     }
   };
+  const saveSupportMemory = async (helpfulness: "helpful" | "not_helpful") => {
+    const actionId = decision.actionIds[0];
+    if (!actionId || memoryState === "saving") return;
+    setMemoryState("saving");
+    try {
+      const response = await fetch("/api/account/support-memories", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          schemaVersion: "1.0",
+          situationIds: input.situationIds,
+          actionId,
+          helpfulness,
+        }),
+      });
+      if (response.status === 401) {
+        setMemoryState("sign_in");
+        return;
+      }
+      setMemoryState(response.ok ? "saved" : "failed");
+    } catch {
+      setMemoryState("failed");
+    }
+  };
   return (
     <main id="main" className="result-page">
       <div className="result-topline">
@@ -640,6 +671,9 @@ function ResultStep({
             ? "Reviewed fallback"
             : "Personalized with Gemini"}
         </span>
+        {personalMemoryUsed && (
+          <span className="provider-pill">Used saved preferences</span>
+        )}
       </div>
       <header className="result-heading">
         <span className="eyebrow">
@@ -720,6 +754,49 @@ function ResultStep({
           </div>
         </article>
       )}
+      {role === "individual" && (
+        <section className="support-memory-card" aria-live="polite">
+          <div>
+            <span className="card-label">Optional support memory</span>
+            <h2>Should Haven remember this first step?</h2>
+            <p>
+              Save only your tap choices and whether the step fit. Haven does
+              not save this conversation, audio, script, or crisis details.
+            </p>
+          </div>
+          {memoryState === "saved" ? (
+            <strong>
+              Saved for 90 days.{" "}
+              <Link href="/account/memories">Manage or delete it.</Link>
+            </strong>
+          ) : memoryState === "sign_in" ? (
+            <p>
+              <Link href="/auth?next=/">Sign in</Link> to save this preference.
+              Immediate support remains account-free.
+            </p>
+          ) : (
+            <div className="support-memory-actions">
+              <button
+                disabled={memoryState === "saving"}
+                onClick={() => void saveSupportMemory("helpful")}
+              >
+                This helped
+              </button>
+              <button
+                disabled={memoryState === "saving"}
+                onClick={() => void saveSupportMemory("not_helpful")}
+              >
+                Not for me
+              </button>
+            </div>
+          )}
+          {memoryState === "failed" && (
+            <small>
+              That preference was not saved. Your current result is unchanged.
+            </small>
+          )}
+        </section>
+      )}
       <div className="result-actions">
         <button className="text-button" onClick={edit}>
           <ArrowLeft /> Change answers
@@ -776,6 +853,7 @@ export function HavenApp() {
   const [audio, setAudio] = useState<Blob | null>(null);
   const [decision, setDecision] = useState<SafetyDecision | null>(null);
   const [result, setResult] = useState<InterventionResult | null>(null);
+  const [personalMemoryUsed, setPersonalMemoryUsed] = useState(false);
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -787,6 +865,7 @@ export function HavenApp() {
     setAudio(null);
     setDecision(null);
     setResult(null);
+    setPersonalMemoryUsed(false);
     setView("landing");
   };
 
@@ -830,6 +909,7 @@ export function HavenApp() {
         decision: SafetyDecision;
         result: InterventionResult | null;
         voiceSafetySignalIds?: ObservableSignalId[];
+        personalMemoryUsed?: boolean;
       };
       if (payload.decision.tier === "emergency") {
         setInput(
@@ -837,12 +917,14 @@ export function HavenApp() {
         );
         setDecision(payload.decision);
         setResult(null);
+        setPersonalMemoryUsed(false);
         setView("result");
         return;
       }
       if (!payload.result) throw new Error("missing_result");
       setDecision(payload.decision);
       setResult(payload.result);
+      setPersonalMemoryUsed(payload.personalMemoryUsed === true);
       setView("result");
     } catch (error) {
       const reason =
@@ -852,6 +934,7 @@ export function HavenApp() {
             ? "rate_limited"
             : "network_unavailable";
       setResult(createFallback(input, nextDecision, reason));
+      setPersonalMemoryUsed(false);
       setView("result");
     } finally {
       window.clearTimeout(timeout);
@@ -888,6 +971,8 @@ export function HavenApp() {
         result={result}
         decision={decision}
         role={input.role}
+        input={input}
+        personalMemoryUsed={personalMemoryUsed}
         reset={reset}
         edit={() => setView("context")}
       />

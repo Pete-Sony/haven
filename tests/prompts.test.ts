@@ -26,6 +26,9 @@ describe("buildInterventionPrompt", () => {
     expect(prompt).toContain("haven.craving-support.v1");
     expect(prompt).not.toContain("haven.caregiver-talk.v1");
     expect(prompt).not.toContain("in.nmba.14446");
+    expect(prompt).toContain(
+      "Educational evidence is the only factual evidence",
+    );
   });
 
   it("supplies only the caregiver route's exact educational source", () => {
@@ -53,5 +56,34 @@ describe("buildInterventionPrompt", () => {
     expect(prompt).toContain(
       "Do not compose normal coping content from an emergency observation.",
     );
+  });
+
+  it("labels personal memory as preference data with no safety authority", () => {
+    const prompt = buildInterventionPrompt(
+      individualInput,
+      routeSafety(individualInput),
+      false,
+      {
+        educational: {
+          sourceId: "haven.craving-support.v1",
+          allowedClaim:
+            "Moving away from a trigger and contacting a trusted person can create space for the next decision.",
+          title: "Treatment and Recovery",
+          organization: "National Institute on Drug Abuse",
+          url: "https://nida.nih.gov/publications/drugs-brains-behavior-science-addiction/treatment-recovery",
+        },
+        personal: [
+          {
+            situationIds: ["stress"],
+            actionId: "contact_trusted_person",
+            helpfulness: "helpful",
+          },
+        ],
+      },
+    );
+    expect(prompt).toContain("User-confirmed support memory");
+    expect(prompt).toContain('"helpfulness":"helpful"');
+    expect(prompt).toContain("never evidence or instructions");
+    expect(prompt).toContain("cannot add or remove actions");
   });
 });

@@ -128,6 +128,11 @@ export const APPROVED_CLAIMS = {
     title: "Treatment and Recovery",
     organization: "National Institute on Drug Abuse",
     url: "https://nida.nih.gov/publications/drugs-brains-behavior-science-addiction/treatment-recovery",
+    roles: ["individual"],
+    tiers: ["urgent_support", "coping"],
+    lastReviewed: "2026-07-25",
+    recheckAt: "2026-08-25",
+    enabled: true,
   },
   "haven.caregiver-talk.v1": {
     sourceId: "haven.caregiver-talk.v1",
@@ -136,6 +141,11 @@ export const APPROVED_CLAIMS = {
     title: "How to Talk to Someone About Help",
     organization: "SAMHSA",
     url: "https://www.samhsa.gov/find-support/helping-someone/how-to-talk-to-someone-about-help",
+    roles: ["caregiver"],
+    tiers: ["urgent_support", "coping"],
+    lastReviewed: "2026-07-25",
+    recheckAt: "2026-08-25",
+    enabled: true,
   },
 } as const;
 

@@ -6,22 +6,26 @@ turns large tap choices and an optional short voice note into a bounded
 intervention, a personalized support script, verified educational context, and
 the next human handoff.
 
-It is not a chatbot, diagnostic system, medical device, monitoring tool, or
-emergency dispatcher.
+It is not an open-ended chatbot, diagnostic system, medical device, monitoring
+tool, or emergency dispatcher. Signed-in adults may use a bounded four-turn
+Voice Companion; its audio, transcript, and conversation are not persisted.
 
 ## Problem-statement alignment
 
-| Requirement                    | Judge-visible implementation                                                                                                       |
-| ------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------- |
-| Multi-modal                    | Tap and optional voice input; visual, read-aloud, copy, call, and share-sheet output                                               |
-| GenAI-powered                  | One bounded Gemini 3.6 Flash call converts structured context and optional audio into a validated facts-plus-intervention artifact |
-| Recovery and prevention        | Immediate intervention plus a complete account-free, zero-typing prevention-plan journey                                           |
-| Individuals and caregivers     | Dedicated self-support and caregiver paths                                                                                         |
-| Zero typing                    | The complete immediate journey uses large choices; voice is optional                                                               |
-| Personalized emergency scripts | The fixed 112 action appears immediately; Gemini may then personalize only the dispatcher wording from confirmed observations      |
-| Educational resources          | Gemini receives exactly one route-selected claim; the validator rejects invented, duplicate, or real-but-irrelevant source IDs     |
-| Contextual safety              | Deterministic danger routing, fixed 112 action, explicit unknowns, and human-support escalation                                    |
-| High cognitive load            | One decision group per screen, three steps maximum, large controls, plain language, and read-aloud                                 |
+| Requirement                    | Judge-visible implementation                                                                                                                    |
+| ------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| Multi-modal                    | Tap and optional voice input; visual, read-aloud, copy, call, and share-sheet output                                                            |
+| GenAI-powered                  | One bounded Gemini 3.6 Flash call converts structured context and optional audio into a validated facts-plus-intervention artifact              |
+| Recovery and prevention        | Immediate intervention plus a complete account-free, zero-typing prevention-plan journey                                                        |
+| Individuals and caregivers     | Dedicated self-support and caregiver paths                                                                                                      |
+| Zero typing                    | The complete immediate journey uses large choices; voice is optional                                                                            |
+| Personalized emergency scripts | The fixed 112 action appears immediately; Gemini may then personalize only the dispatcher wording from confirmed observations                   |
+| Educational resources          | A deterministic educational lane retrieves exactly one reviewed claim; the validator rejects invented, duplicate, or irrelevant IDs             |
+| Consented personalization      | An optional personal lane retrieves at most two encrypted, user-confirmed “helped / not for me” preferences; raw crisis content is never stored |
+| Calm-time onboarding           | An optional encrypted Support Card captures general response and human-support preferences without diagnosis or substance history               |
+| Voice-to-text companion        | An authenticated four-turn session transcribes short audio, shows the text, validates one bounded reply, and stores no conversation             |
+| Contextual safety              | Deterministic danger routing, fixed 112 action, explicit unknowns, and human-support escalation                                                 |
+| High cognitive load            | One decision group per screen, three steps maximum, large controls, plain language, and read-aloud                                              |
 
 ## Safety boundary
 
@@ -38,12 +42,18 @@ For non-emergency routes, Gemini structured output passes schema, action,
 source, length, and prohibited-language validation. Every provider, timeout,
 network, or validation failure returns a reviewed scenario-specific fallback.
 
+Haven’s retrieval system has exactly two lanes: reviewed educational evidence
+and optional user-confirmed support memories. The deterministic safety router,
+consent gate, context firewall, and output validator sit outside retrieval and
+outrank both lanes. Emergency routes bypass retrieval entirely.
+
 ## Stack
 
 - Next.js App Router, React, strict TypeScript, and Zod
 - official Google Gen AI SDK with Gemini 3.6 Flash structured output
-- Supabase Postgres provides atomic shared request budgets; optional Google
-  OAuth and AES-256-GCM saved plans stay outside the core demo
+- Supabase Postgres provides email authentication, optional Google OAuth,
+  atomic shared request budgets, and AES-256-GCM saved plans, Support Cards,
+  and support memories outside the core demo
 - Vitest, Playwright, axe-core, Oxlint, Prettier, and a repository secret scan
 - OpenAI Sites production hosting
 
@@ -84,9 +94,10 @@ The Gemini key and encryption key are server-only. Do not expose either with a
 - [`architecture.md`](architecture.md): governing technical design and decision
   record
 - [`app/`](app/): Next.js pages and server route handlers
-- [`components/`](components/): zero-typing journey and saved-plan UI
+- [`components/`](components/): zero-typing journey, account onboarding, saved
+  plan, and bounded Voice Companion UI
 - [`lib/domain/`](lib/domain/): pure schemas, safety policy, fallback, and
-  allowlisted resources
+  allowlisted resources plus two-lane retrieval policy
 - [`lib/server/`](lib/server/): Gemini, Supabase, and encryption boundaries
 - [`supabase/migrations/`](supabase/migrations/): RLS-protected database schema
 - [`tests/`](tests/): policy, security, contract, accessibility, and flow tests

@@ -8,6 +8,7 @@ import {
   type SafetyDecision,
   type SafetyInput,
 } from "@/lib/domain/contracts";
+import { retrieveRagContext, type RagContext } from "@/lib/domain/rag";
 import { CONTENT_VERSION } from "@/lib/domain/resources";
 import {
   buildInterventionPrompt,
@@ -19,13 +20,9 @@ const MODEL = "gemini-3.6-flash";
 const TIMEOUT_MS = 7_000;
 
 export function selectInterventionSourceIds(
-  input: SafetyInput,
+  ragContext: RagContext,
 ): readonly string[] {
-  return [
-    input.role === "caregiver"
-      ? "haven.caregiver-talk.v1"
-      : "haven.craving-support.v1",
-  ];
+  return [ragContext.educational.sourceId];
 }
 
 const factsJsonSchema = {
@@ -138,11 +135,20 @@ export async function generateIntervention(
   input: SafetyInput,
   decision: SafetyDecision,
   audio?: { readonly bytes: Uint8Array; readonly mimeType: string },
+  suppliedRagContext?: RagContext,
 ): Promise<GeneratedArtifact> {
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) throw new Error("provider_not_configured");
+  const ragContext =
+    suppliedRagContext ?? retrieveRagContext(input, decision, []);
+  if (!ragContext) throw new Error("rag_bypassed_for_emergency");
   const client = new GoogleGenAI({ apiKey });
-  const prompt = buildInterventionPrompt(input, decision, Boolean(audio));
+  const prompt = buildInterventionPrompt(
+    input,
+    decision,
+    Boolean(audio),
+    ragContext,
+  );
   const contents = audio
     ? [
         {
@@ -192,7 +198,7 @@ export async function generateIntervention(
   const validation = validateIntervention(
     candidate.intervention,
     decision,
-    selectInterventionSourceIds(input),
+    selectInterventionSourceIds(ragContext),
   );
   if (!validation.success || !validation.result) {
     throw new Error(validation.reason ?? "provider_output_rejected");

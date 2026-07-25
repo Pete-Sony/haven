@@ -7,12 +7,14 @@
     "node": ">=24 <25"
   },
   "overrides": {
+    "@node-minify/core@8.0.6": "10.5.0",
     "postcss": "8.5.23",
     "sharp": "0.35.3"
   },
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "build:sites": "opennextjs-cloudflare build",
     "start": "next start",
     "typecheck": "next typegen && tsc --noEmit",
     "lint": "oxlint . --deny-warnings",
@@ -25,6 +27,7 @@
   },
   "dependencies": {
     "@google/genai": "^1.34.0",
+    "@opennextjs/cloudflare": "^1.20.2",
     "@supabase/ssr": "^0.7.0",
     "@supabase/supabase-js": "^2.57.0",
     "lucide-react": "^1.26.0",
@@ -43,6 +46,7 @@
     "oxlint": "^1.75.0",
     "prettier": "^3.8.0",
     "typescript": "^5.9.0",
-    "vitest": "^4.0.0"
+    "vitest": "^4.0.0",
+    "wrangler": "^4.114.0"
   }
 }

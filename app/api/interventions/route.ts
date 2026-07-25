@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { safetyInputSchema } from "@/lib/domain/contracts";
 import { createFallback } from "@/lib/domain/fallback";
+import { retrieveRagContext } from "@/lib/domain/rag";
 import {
   buildEmergencyScript,
   mergeVoiceSafetySignals,
@@ -8,6 +9,7 @@ import {
 } from "@/lib/domain/safety";
 import { generateIntervention } from "@/lib/server/ai/provider";
 import { consumeInterventionBudget } from "@/lib/server/rate-limit";
+import { loadPersonalSupportMemories } from "@/lib/server/rag";
 
 export const runtime = "nodejs";
 
@@ -70,7 +72,20 @@ export async function POST(request: Request): Promise<NextResponse> {
     }
 
     try {
-      const generated = await generateIntervention(input, decision, audio);
+      const personalMemories = await loadPersonalSupportMemories();
+      const ragContext = retrieveRagContext(input, decision, personalMemories);
+      if (!ragContext) {
+        return NextResponse.json(
+          { error: "emergency_route_required" },
+          { status: 409 },
+        );
+      }
+      const generated = await generateIntervention(
+        input,
+        decision,
+        audio,
+        ragContext,
+      );
       const safetyCheckedInput = mergeVoiceSafetySignals(
         input,
         generated.facts.safetyConfirmationSignalIds,
@@ -93,6 +108,7 @@ export async function POST(request: Request): Promise<NextResponse> {
         decision: voiceCheckedDecision,
         result: generated.intervention,
         voiceSafetySignalIds: generated.facts.safetyConfirmationSignalIds,
+        personalMemoryUsed: ragContext.personal.length > 0,
       });
     } catch (error) {
       const reason =

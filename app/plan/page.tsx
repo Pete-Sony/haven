@@ -36,12 +36,12 @@ export default async function PlanPage() {
         <section className="plan-card">
           <h2>Sign in only if you want to save.</h2>
           <p>
-            Google sign-in is used only for your plan. We do not require it
-            during a difficult moment.
+            Your Haven account is used only for saved features. We do not
+            require it during a difficult moment.
           </p>
-          <a className="primary-button" href="/api/auth/google">
-            Continue with Google
-          </a>
+          <Link className="primary-button" href="/auth?next=/plan">
+            Sign in to continue
+          </Link>
         </section>
       )}
       {data.user && (

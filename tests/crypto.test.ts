@@ -42,6 +42,25 @@ describe("encrypted saved-plan values", () => {
     ).toThrow();
   });
 
+  it("binds ciphertext to its supplied account and record context", () => {
+    process.env.HAVEN_DATA_ENCRYPTION_KEY = Buffer.alloc(32, 8).toString(
+      "base64",
+    );
+    const encrypted = encryptJson(
+      { actionId: "contact_trusted_person" },
+      "support-memory:user-a:memory-a",
+    );
+    expect(decryptJson(encrypted, "support-memory:user-a:memory-a")).toEqual({
+      actionId: "contact_trusted_person",
+    });
+    expect(() =>
+      decryptJson(encrypted, "support-memory:user-b:memory-a"),
+    ).toThrow();
+    expect(() =>
+      decryptJson(encrypted, "support-memory:user-a:memory-b"),
+    ).toThrow();
+  });
+
   it("rejects unsupported key versions", () => {
     process.env.HAVEN_DATA_ENCRYPTION_KEY = Buffer.alloc(32, 8).toString(
       "base64",

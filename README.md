@@ -10,6 +10,11 @@ It is not an open-ended chatbot, diagnostic system, medical device, monitoring
 tool, or emergency dispatcher. Signed-in adults may use a bounded four-turn
 Voice Companion; its audio, transcript, and conversation are not persisted.
 
+## Production
+
+The access-controlled production app is deployed at
+<https://haven-recovery.fahim656768.chatgpt.site>.
+
 ## Problem-statement alignment
 
 | Requirement                    | Judge-visible implementation                                                                                                                    |

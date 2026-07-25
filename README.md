@@ -12,8 +12,7 @@ Voice Companion; its audio, transcript, and conversation are not persisted.
 
 ## Production
 
-The access-controlled production app is deployed at
-<https://haven-recovery.fahim656768.chatgpt.site>.
+The production app is deployed at <https://haven-relay.vercel.app/>.
 
 ## Problem-statement alignment
 

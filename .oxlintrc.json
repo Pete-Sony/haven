@@ -1,0 +1,20 @@
+{
+  "categories": {
+    "correctness": "deny",
+    "suspicious": "deny"
+  },
+  "rules": {
+    "no-eval": "deny",
+    "no-new-func": "deny"
+  },
+  "ignorePatterns": [
+    ".next/**",
+    ".open-next/**",
+    "coverage/**",
+    "dist/**",
+    "node_modules/**",
+    "playwright-report/**",
+    "supabase/.temp/**",
+    "test-results/**"
+  ]
+}

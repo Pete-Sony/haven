@@ -32,18 +32,22 @@ const valid: InterventionResult = {
   promptVersion: "haven-composer-1",
   contentVersion: "2026-07-25",
 };
+const individualSources = ["haven.craving-support.v1"] as const;
 
 describe("validateIntervention", () => {
   it("accepts a structurally and semantically valid artifact", () => {
-    expect(validateIntervention(valid, decision)).toMatchObject({
+    expect(
+      validateIntervention(valid, decision, individualSources),
+    ).toMatchObject({
       success: true,
     });
   });
 
   it("rejects malformed output", () => {
-    expect(validateIntervention({ headline: "short" }, decision).reason).toBe(
-      "schema_invalid",
-    );
+    expect(
+      validateIntervention({ headline: "short" }, decision, individualSources)
+        .reason,
+    ).toBe("schema_invalid");
   });
 
   it.each([
@@ -53,9 +57,10 @@ describe("validateIntervention", () => {
     "Your message was sent.",
     "This is guaranteed.",
   ])("rejects prohibited claim: %s", (headline) => {
-    expect(validateIntervention({ ...valid, headline }, decision).reason).toBe(
-      "prohibited_language",
-    );
+    expect(
+      validateIntervention({ ...valid, headline }, decision, individualSources)
+        .reason,
+    ).toBe("prohibited_language");
   });
 
   it("rejects an action outside the safety decision", () => {
@@ -63,9 +68,9 @@ describe("validateIntervention", () => {
       ...valid,
       steps: [{ actionId: "contact_professional", label: "Contact support." }],
     };
-    expect(validateIntervention(result, decision).reason).toBe(
-      "action_not_allowed",
-    );
+    expect(
+      validateIntervention(result, decision, individualSources).reason,
+    ).toBe("action_not_allowed");
   });
 
   it("rejects invented source identifiers", () => {
@@ -73,14 +78,41 @@ describe("validateIntervention", () => {
       validateIntervention(
         { ...valid, sourceIds: ["invented.source"] },
         decision,
+        individualSources,
       ).reason,
     ).toBe("source_not_allowed");
   });
 
-  it("permits a tier-matched service source", () => {
+  it("rejects a real service source that was not selected for composition", () => {
     expect(
-      validateIntervention({ ...valid, sourceIds: ["in.nmba.14446"] }, decision)
-        .success,
-    ).toBe(true);
+      validateIntervention(
+        { ...valid, sourceIds: ["in.nmba.14446"] },
+        decision,
+        individualSources,
+      ).reason,
+    ).toBe("source_not_allowed");
+  });
+
+  it("rejects laundering a real caregiver source into an individual route", () => {
+    expect(
+      validateIntervention(
+        { ...valid, sourceIds: ["haven.caregiver-talk.v1"] },
+        decision,
+        individualSources,
+      ).reason,
+    ).toBe("source_not_allowed");
+  });
+
+  it("rejects duplicate sources even when the identifier is allowed", () => {
+    expect(
+      validateIntervention(
+        {
+          ...valid,
+          sourceIds: ["haven.craving-support.v1", "haven.craving-support.v1"],
+        },
+        decision,
+        individualSources,
+      ).reason,
+    ).toBe("source_not_allowed");
   });
 });

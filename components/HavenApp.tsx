@@ -31,7 +31,11 @@ import type {
 } from "@/lib/domain/contracts";
 import { createFallback } from "@/lib/domain/fallback";
 import { APPROVED_CLAIMS, resolveResources } from "@/lib/domain/resources";
-import { buildEmergencyScript, routeSafety } from "@/lib/domain/safety";
+import {
+  buildEmergencyScript,
+  mergeVoiceSafetySignals,
+  routeSafety,
+} from "@/lib/domain/safety";
 
 type View = "landing" | "context" | "safety" | "loading" | "result";
 
@@ -142,6 +146,9 @@ function Landing({ onStart }: { readonly onStart: (role: Role) => void }) {
               <LockKeyhole aria-hidden="true" /> Your immediate choices stay in
               this browser session.
             </p>
+            <Link className="prevention-link" href="/prevent">
+              Plan ahead for a difficult moment <ArrowRight />
+            </Link>
           </div>
           <div className="hero-art" aria-hidden="true">
             <div className="orbit orbit-one" />
@@ -281,9 +288,9 @@ function ContextStep({
       };
       recorder.onstop = () => {
         const blob = new Blob(chunksRef.current, { type: recorder.mimeType });
-        setAudio(blob.size <= 2_500_000 ? blob : null);
+        setAudio(blob.size <= 1_000_000 ? blob : null);
         setAudioStatus(
-          blob.size <= 2_500_000
+          blob.size <= 1_000_000
             ? "Voice note ready. It is sent only when you continue."
             : "Voice note was too large. The tap-only flow still works.",
         );
@@ -305,9 +312,21 @@ function ContextStep({
         <ArrowLeft /> Back
       </button>
       <div className="flow-heading">
-        <span className="eyebrow">Start with what you know</span>
-        <h1>What is making this moment hard?</h1>
-        <p>Choose up to three. You do not need to explain everything.</p>
+        <span className="eyebrow">
+          {input.role === "caregiver"
+            ? "Caregiver support"
+            : "Start with what you know"}
+        </span>
+        <h1>
+          {input.role === "caregiver"
+            ? "What are you noticing around them?"
+            : "What is making this moment hard?"}
+        </h1>
+        <p>
+          {input.role === "caregiver"
+            ? "Choose up to three. Focus on what you observe, not a diagnosis."
+            : "Choose up to three. You do not need to explain everything."}
+        </p>
       </div>
       <fieldset>
         <legend>Choose the closest fit</legend>
@@ -499,6 +518,7 @@ function EmergencyResult({
 
   useEffect(() => {
     const controller = new AbortController();
+    const timeout = window.setTimeout(() => controller.abort(), 4_000);
     void fetch("/api/emergency-script", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -517,7 +537,10 @@ function EmergencyResult({
         setProvider(payload.provider);
       })
       .catch(() => undefined);
-    return () => controller.abort();
+    return () => {
+      window.clearTimeout(timeout);
+      controller.abort();
+    };
   }, [input]);
   return (
     <main id="main" className="emergency-page">
@@ -564,8 +587,8 @@ function Loading() {
       </div>
       <h1>Building one small next step…</h1>
       <p>
-        Safety is already checked. If Gemini is unavailable, the reviewed
-        fallback appears automatically.
+        Safety is already checked. Haven waits up to seven seconds, then shows
+        the complete reviewed fallback automatically.
       </p>
     </main>
   );
@@ -574,11 +597,13 @@ function Loading() {
 function ResultStep({
   result,
   decision,
+  role,
   reset,
   edit,
 }: {
   readonly result: InterventionResult;
   readonly decision: SafetyDecision;
+  readonly role: Role;
   readonly reset: () => void;
   readonly edit: () => void;
 }) {
@@ -617,7 +642,9 @@ function ResultStep({
         </span>
       </div>
       <header className="result-heading">
-        <span className="eyebrow">Your next step</span>
+        <span className="eyebrow">
+          {role === "caregiver" ? "Caregiver support" : "Your next step"}
+        </span>
         <h1>{result.headline}</h1>
       </header>
       <div className="result-grid">
@@ -700,14 +727,18 @@ function ResultStep({
         <button className="secondary-button" onClick={reset}>
           <RotateCcw /> Start again
         </button>
-        <Link className="primary-button" href="/plan">
-          Prepare a future plan <ArrowRight />
+        <Link className="secondary-button" href="/prevent">
+          Plan ahead for next time <ArrowRight />
         </Link>
       </div>
       {result.fallbackReason && (
         <p className="fallback-note">
-          Live personalization was unavailable. This reviewed scenario-specific
-          fallback remains complete.
+          {result.fallbackReason === "client_timeout"
+            ? "Live personalization took longer than seven seconds."
+            : result.fallbackReason === "rate_limited"
+              ? "Live personalization is temporarily paused for this device."
+              : "Live personalization was unavailable."}{" "}
+          This reviewed scenario-specific fallback remains complete.
         </p>
       )}
     </main>
@@ -775,22 +806,55 @@ export function HavenApp() {
     const form = new FormData();
     form.set("input", JSON.stringify(input));
     if (audio) form.set("audio", audio, "context.webm");
+    const controller = new AbortController();
+    const timeout = window.setTimeout(() => controller.abort(), 7_500);
     try {
+      let clientId = window.localStorage.getItem("haven.client-id");
+      if (!clientId) {
+        clientId = window.crypto.randomUUID();
+        window.localStorage.setItem("haven.client-id", clientId);
+      }
       const response = await fetch("/api/interventions", {
         method: "POST",
         body: form,
+        signal: controller.signal,
+        headers: { "X-Haven-Client-Id": clientId },
       });
-      if (!response.ok) throw new Error("request_failed");
+      if (!response.ok) {
+        const errorPayload = (await response.json().catch(() => null)) as {
+          error?: string;
+        } | null;
+        throw new Error(errorPayload?.error ?? "request_failed");
+      }
       const payload = (await response.json()) as {
         decision: SafetyDecision;
-        result: InterventionResult;
+        result: InterventionResult | null;
+        voiceSafetySignalIds?: ObservableSignalId[];
       };
+      if (payload.decision.tier === "emergency") {
+        setInput(
+          mergeVoiceSafetySignals(input, payload.voiceSafetySignalIds ?? []),
+        );
+        setDecision(payload.decision);
+        setResult(null);
+        setView("result");
+        return;
+      }
+      if (!payload.result) throw new Error("missing_result");
       setDecision(payload.decision);
       setResult(payload.result);
       setView("result");
-    } catch {
-      setResult(createFallback(input, nextDecision, "network_unavailable"));
+    } catch (error) {
+      const reason =
+        error instanceof DOMException && error.name === "AbortError"
+          ? "client_timeout"
+          : error instanceof Error && error.message === "rate_limited"
+            ? "rate_limited"
+            : "network_unavailable";
+      setResult(createFallback(input, nextDecision, reason));
       setView("result");
+    } finally {
+      window.clearTimeout(timeout);
     }
   };
 
@@ -823,6 +887,7 @@ export function HavenApp() {
       <ResultStep
         result={result}
         decision={decision}
+        role={input.role}
         reset={reset}
         edit={() => setView("context")}
       />

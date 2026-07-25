@@ -33,6 +33,8 @@ const values = {
   HAVEN_DATA_ENCRYPTION_KEY:
     currentValue("HAVEN_DATA_ENCRYPTION_KEY") ||
     randomBytes(32).toString("base64"),
+  RATE_LIMIT_HMAC_KEY:
+    currentValue("RATE_LIMIT_HMAC_KEY") || randomBytes(32).toString("base64"),
 };
 
 const content = [

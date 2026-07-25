@@ -3,12 +3,6 @@ import {
   type InterventionResult,
   type SafetyDecision,
 } from "@/lib/domain/contracts";
-import {
-  APPROVED_CLAIMS,
-  areResourceIdsAllowed,
-  type ApprovedClaimId,
-} from "@/lib/domain/resources";
-
 const PROHIBITED_LANGUAGE =
   /\b(diagnos(?:e|is|ed|tic)|dos(?:e|age)|taper|detox at home|you are safe|guarantee(?:d)?|clinically proven|message (?:was|has been) sent)\b/i;
 
@@ -34,6 +28,7 @@ export interface ValidationResult {
 export function validateIntervention(
   value: unknown,
   decision: SafetyDecision,
+  allowedSourceIds: readonly string[],
 ): ValidationResult {
   const parsed = interventionResultSchema.safeParse(value);
   if (!parsed.success) {
@@ -60,15 +55,12 @@ export function validateIntervention(
     return { success: false, reason: "action_not_allowed" };
   }
 
-  const claimIds = result.sourceIds.filter(
-    (sourceId): sourceId is ApprovedClaimId => sourceId in APPROVED_CLAIMS,
-  );
-  const serviceIds = result.sourceIds.filter(
-    (sourceId) => !(sourceId in APPROVED_CLAIMS),
-  );
+  const selectedSources = new Set(allowedSourceIds);
   if (
-    claimIds.length + serviceIds.length !== result.sourceIds.length ||
-    (serviceIds.length > 0 && !areResourceIdsAllowed(serviceIds, decision.tier))
+    selectedSources.size !== allowedSourceIds.length ||
+    result.sourceIds.length !== selectedSources.size ||
+    new Set(result.sourceIds).size !== result.sourceIds.length ||
+    !result.sourceIds.every((sourceId) => selectedSources.has(sourceId))
   ) {
     return { success: false, reason: "source_not_allowed" };
   }

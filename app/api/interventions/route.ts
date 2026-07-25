@@ -1,12 +1,17 @@
 import { NextResponse } from "next/server";
 import { safetyInputSchema } from "@/lib/domain/contracts";
 import { createFallback } from "@/lib/domain/fallback";
-import { routeSafety } from "@/lib/domain/safety";
+import {
+  buildEmergencyScript,
+  mergeVoiceSafetySignals,
+  routeSafety,
+} from "@/lib/domain/safety";
 import { generateIntervention } from "@/lib/server/ai/provider";
+import { consumeInterventionBudget } from "@/lib/server/rate-limit";
 
 export const runtime = "nodejs";
 
-const MAX_AUDIO_BYTES = 2_500_000;
+const MAX_AUDIO_BYTES = 1_000_000;
 const ALLOWED_AUDIO_TYPES = new Set([
   "audio/webm",
   "audio/ogg",
@@ -46,9 +51,49 @@ export async function POST(request: Request): Promise<NextResponse> {
       };
     }
 
+    const budget = await consumeInterventionBudget(request, Boolean(audio));
+    if (!budget.allowed) {
+      return NextResponse.json(
+        {
+          error: "rate_limited",
+          message:
+            "Haven has paused live personalization for this device. The reviewed tap-only support path remains available.",
+        },
+        {
+          status: 429,
+          headers: {
+            "Retry-After": String(budget.retryAfterSeconds),
+            "X-RateLimit-Remaining": String(budget.remaining),
+          },
+        },
+      );
+    }
+
     try {
-      const result = await generateIntervention(input, decision, audio);
-      return NextResponse.json({ decision, result });
+      const generated = await generateIntervention(input, decision, audio);
+      const safetyCheckedInput = mergeVoiceSafetySignals(
+        input,
+        generated.facts.safetyConfirmationSignalIds,
+      );
+      const voiceCheckedDecision = routeSafety(safetyCheckedInput);
+      if (voiceCheckedDecision.tier === "emergency") {
+        return NextResponse.json({
+          decision: voiceCheckedDecision,
+          result: null,
+          voiceSafetySignalIds: generated.facts.safetyConfirmationSignalIds,
+          emergencyScript: buildEmergencyScript(
+            safetyCheckedInput.observableSignalIds,
+          ),
+        });
+      }
+      if (!generated.intervention) {
+        throw new Error("missing_intervention");
+      }
+      return NextResponse.json({
+        decision: voiceCheckedDecision,
+        result: generated.intervention,
+        voiceSafetySignalIds: generated.facts.safetyConfirmationSignalIds,
+      });
     } catch (error) {
       const reason =
         error instanceof Error ? error.message.slice(0, 100) : "provider_error";

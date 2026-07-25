@@ -11,17 +11,17 @@ emergency dispatcher.
 
 ## Problem-statement alignment
 
-| Requirement                    | Judge-visible implementation                                                                                                  |
-| ------------------------------ | ----------------------------------------------------------------------------------------------------------------------------- |
-| Multi-modal                    | Tap and optional voice input; visual, read-aloud, copy, call, and share-sheet output                                          |
-| GenAI-powered                  | Gemini 3.6 Flash converts structured context and optional audio facts into a validated intervention artifact                  |
-| Recovery and prevention        | Immediate intervention plus an optional encrypted future plan                                                                 |
-| Individuals and caregivers     | Dedicated self-support and caregiver paths                                                                                    |
-| Zero typing                    | The complete immediate journey uses large choices; voice is optional                                                          |
-| Personalized emergency scripts | The fixed 112 action appears immediately; Gemini may then personalize only the dispatcher wording from confirmed observations |
-| Educational resources          | Generated source IDs must resolve through the application allowlist                                                           |
-| Contextual safety              | Deterministic danger routing, fixed 112 action, explicit unknowns, and human-support escalation                               |
-| High cognitive load            | One decision group per screen, three steps maximum, large controls, plain language, and read-aloud                            |
+| Requirement                    | Judge-visible implementation                                                                                                       |
+| ------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------- |
+| Multi-modal                    | Tap and optional voice input; visual, read-aloud, copy, call, and share-sheet output                                               |
+| GenAI-powered                  | One bounded Gemini 3.6 Flash call converts structured context and optional audio into a validated facts-plus-intervention artifact |
+| Recovery and prevention        | Immediate intervention plus a complete account-free, zero-typing prevention-plan journey                                           |
+| Individuals and caregivers     | Dedicated self-support and caregiver paths                                                                                         |
+| Zero typing                    | The complete immediate journey uses large choices; voice is optional                                                               |
+| Personalized emergency scripts | The fixed 112 action appears immediately; Gemini may then personalize only the dispatcher wording from confirmed observations      |
+| Educational resources          | Gemini receives exactly one route-selected claim; the validator rejects invented, duplicate, or real-but-irrelevant source IDs     |
+| Contextual safety              | Deterministic danger routing, fixed 112 action, explicit unknowns, and human-support escalation                                    |
+| High cognitive load            | One decision group per screen, three steps maximum, large controls, plain language, and read-aloud                                 |
 
 ## Safety boundary
 
@@ -29,6 +29,10 @@ Application code—not Gemini—assigns `emergency`, `urgent_support`, or `copin
 Observable danger renders the 112 route synchronously. Gemini cannot lower the
 risk tier, invent a phone number, diagnose, recommend medication or dosage,
 claim that someone is safe, or claim that an external action occurred.
+
+When voice explicitly describes an observable danger sign, the returned
+allowlisted signal is merged with tapped signals and application code reruns
+the deterministic router. Any emergency result discards generated coping text.
 
 For non-emergency routes, Gemini structured output passes schema, action,
 source, length, and prohibited-language validation. Every provider, timeout,
@@ -38,9 +42,9 @@ network, or validation failure returns a reviewed scenario-specific fallback.
 
 - Next.js App Router, React, strict TypeScript, and Zod
 - official Google Gen AI SDK with Gemini 3.6 Flash structured output
-- Supabase Google OAuth, Postgres RLS, and application-layer AES-256-GCM for
-  optional saved plans
-- Vitest, Playwright, axe-core, ESLint, Prettier, and a repository secret scan
+- Supabase Postgres provides atomic shared request budgets; optional Google
+  OAuth and AES-256-GCM saved plans stay outside the core demo
+- Vitest, Playwright, axe-core, Oxlint, Prettier, and a repository secret scan
 - OpenAI Sites production hosting
 
 This is a conventional responsive web application. It intentionally contains
@@ -70,6 +74,7 @@ cloud features.
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Optional      | Supabase PKCE/OAuth client           |
 | `GOOGLE_OAUTH_ENABLED`          | With OAuth    | Enables sign-in after provider setup |
 | `HAVEN_DATA_ENCRYPTION_KEY`     | With Supabase | 32-byte base64 AES key               |
+| `RATE_LIMIT_HMAC_KEY`           | Production    | Hashes budget identities             |
 
 The Gemini key and encryption key are server-only. Do not expose either with a
 `NEXT_PUBLIC_` prefix.
@@ -89,7 +94,8 @@ The Gemini key and encryption key are server-only. Do not expose either with a
 ## Verified commands
 
 `npm run verify` checks formatting, strict types, lint rules, unit/policy tests
-with coverage thresholds, secret patterns, and the optimized production build.
+with coverage thresholds, secret patterns, a zero-high dependency audit, and
+the optimized production build.
 `npm run test:e2e` verifies the individual path, caregiver path, emergency
 route, narrow browser layout, and critical automated accessibility findings.
 

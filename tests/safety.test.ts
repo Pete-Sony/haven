@@ -3,6 +3,7 @@ import type { SafetyInput } from "@/lib/domain/contracts";
 import {
   buildEmergencyScript,
   containsEmergencySignal,
+  mergeVoiceSafetySignals,
   routeSafety,
 } from "@/lib/domain/safety";
 
@@ -63,6 +64,21 @@ describe("routeSafety", () => {
       modelMayPersonalize: true,
     });
   });
+
+  it("gives an emergency observation precedence over contradictory low-risk input", () => {
+    const decision = routeSafety({
+      ...base,
+      situationIds: ["stress"],
+      intensityBand: "manageable",
+      isAlone: false,
+      observableSignalIds: ["not_responding"],
+    });
+    expect(decision).toMatchObject({
+      tier: "emergency",
+      modelMayPersonalize: false,
+      reasonCode: "observable_not_responding",
+    });
+  });
 });
 
 describe("emergency script", () => {
@@ -85,5 +101,19 @@ describe("emergency script", () => {
   it("recognizes emergency signals", () => {
     expect(containsEmergencySignal(["stress" as never, "seizure"])).toBe(true);
     expect(containsEmergencySignal([])).toBe(false);
+  });
+
+  it("feeds voice-derived observable danger back through deterministic routing", () => {
+    const checked = mergeVoiceSafetySignals(base, ["abnormal_breathing"]);
+    expect(checked.observableSignalIds).toEqual(["abnormal_breathing"]);
+    expect(routeSafety(checked).tier).toBe("emergency");
+  });
+
+  it("deduplicates tapped and voice-derived safety signals", () => {
+    const checked = mergeVoiceSafetySignals(
+      { ...base, observableSignalIds: ["collapsed"] },
+      ["collapsed", "seizure"],
+    );
+    expect(checked.observableSignalIds).toEqual(["collapsed", "seizure"]);
   });
 });

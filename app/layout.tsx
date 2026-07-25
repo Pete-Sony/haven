@@ -34,8 +34,8 @@ export default function RootLayout({
             <strong>Haven</strong>
           </Link>
           <nav aria-label="Primary navigation">
+            <Link href="/prevent">Plan ahead</Link>
             <Link href="/resources">Resources</Link>
-            <Link href="/plan">My plan</Link>
             <Link className="emergency-link" href="/emergency">
               Emergency 112
             </Link>

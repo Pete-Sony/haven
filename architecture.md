@@ -34,9 +34,10 @@ leak U.S. phone numbers or claims into the release.
 - It has no app-store package, native wrapper, install prompt, web-app
   manifest, or service worker.
 - The urgent and emergency journeys work without login.
-- Google OAuth is used only for saving a calm-time prevention plan and trusted
-  contacts.
-- OAuth launches in testing mode on the generated production URL.
+- The core prevention journey is account-free and stores data only after an
+  explicit device-local save.
+- Optional Google OAuth and encrypted cross-device saving stay outside the
+  primary pitch and core journey.
 - Supabase owns authentication and encrypted account data.
 - Gemini 3.6 Flash performs bounded context interpretation and wording.
 - Application code alone assigns risk tiers, actions, and resource IDs.
@@ -91,7 +92,7 @@ gates even when the evaluator assigns them lower score impact.
 | Efficiency                  | Static source retrieval, bounded audio, no live search or AI tools, no automatic retry loop, server rendering by default, provider deadlines, small response and bundle budgets                                      |
 | Testing                     | Safety truth table, validator/red-team fixtures, RLS isolation, account lifecycle, AI failure paths, end-to-end journeys, production smoke tests                                                                     |
 | Accessibility               | WCAG 2.2 AA target, complete keyboard/tap path, semantic controls, visible focus, status announcements, reflow, reduced motion, audio alternatives                                                                   |
-| Google Services             | Real Gemini 3.6 Flash structured output and Google OAuth materially support the experience; neither is decorative                                                                                                    |
+| Google Services             | Real Gemini 3.6 Flash structured output materially supports the core experience; optional Google OAuth is not required for the demonstration                                                                         |
 
 The judge-facing technical proof may show the policy tier, model ID, prompt
 version, source IDs, validator status, and fallback status. It must not show
@@ -169,10 +170,10 @@ The exact deployed source must match the public GitHub `main` commit.
 
 | Route        | Purpose                                                               |
 | ------------ | --------------------------------------------------------------------- |
-| `/`          | Product explanation, role entry, safety limitations, resource summary |
-| `/relay`     | Individual and caregiver zero-typing journey                          |
+| `/`          | Product explanation plus individual and caregiver zero-typing journey |
 | `/emergency` | Fixed India emergency renderer and base dispatcher script             |
-| `/plan`      | Calm-time plan editor; sign-in required only when saving              |
+| `/prevent`   | Account-free, zero-typing prevention-plan journey                     |
+| `/plan`      | Optional encrypted cross-device plan editor                           |
 | `/resources` | Reviewed India national and optional Kerala sources                   |
 | `/privacy`   | Data inventory, processor disclosure, retention, user controls        |
 | `/terms`     | Intended-use and product limitation terms                             |
@@ -246,13 +247,13 @@ acknowledged.
 
 ### 7.7 Prevention-plan journey
 
-1. Select a likely trigger, preferred action, tone, language, safe-place label,
-   and trusted contact.
-2. Rehearse one generated support sentence.
-3. Sign in with Google only when saving.
-4. Review exactly what will be stored.
-5. Save through the authenticated server boundary.
-6. Export, clear, or delete data at any time.
+1. Select a likely trigger using a large tap target.
+2. Select one first action.
+3. Select one safer context.
+4. Read, hear, or copy the resulting implementation-intention sentence.
+5. Optionally save only to the current browser with an explicit tap.
+6. Clear or replace the device-local plan at any time.
+7. Cross-device account saving is a separate optional route.
 
 ## 8. Deterministic safety authority
 
@@ -292,8 +293,11 @@ signal. Return at most three non-medical actions and a support-person draft.
 - The client policy routes synchronously.
 - The server independently re-runs the safety policy.
 - The normal intervention endpoint rejects emergency-bearing input.
-- The model receives the fixed tier and cannot return a tier.
+- The model receives only the tier, allowed action IDs, and one selected
+  educational source; service IDs remain outside the prompt.
 - Any output that changes action/resource authority is rejected.
+- Voice-derived danger makes the model return a null intervention, then the
+  server reruns deterministic routing before any normal content is returned.
 
 ## 9. Public contracts
 
@@ -389,55 +393,49 @@ controlled migration, but production and test evidence record the exact model.
 Use structured outputs. Do not send deprecated sampling parameters, request
 chain-of-thought, enable tools, search the web, or expose action functions.
 
-### 10.2 Stage 1: context interpreter
+### 10.2 Single-pass multimodal artifact
 
-The interpreter runs only when optional audio exists. Tap-only requests use
-the deterministic normalized selections directly.
+Each non-emergency request makes at most one bounded Gemini call. When optional
+audio exists, the same structured response extracts explicit facts and composes
+the intervention. Tap-only requests send the normalized selections and require
+empty audio-fact arrays. This avoids avoidable latency, cost, and failure modes
+from sequential provider calls.
 
 Inputs:
 
 - validated `SafetyInput`;
-- bounded audio;
-- a statement that audio is untrusted user data.
-
-Outputs:
-
-- explicit facts;
-- unknown facts;
-- allowlisted safety-confirmation signal IDs.
-
-The interpreter cannot assign a tier. Any returned safety-confirmation signal
-causes a fixed confirmation screen; it never causes reassuring generation.
-
-### 10.3 Stage 2: script composer
-
-Inputs:
-
-- validated facts;
-- the application-owned `SafetyDecision`;
+- optional bounded audio treated as untrusted user data;
+- the application-owned tier and action allowlist, excluding resource IDs;
 - permitted action labels;
-- a few approved source claims;
+- exactly one route-selected approved source claim;
 - relationship label, language, and tone.
 
 Outputs:
 
+- explicit and unknown audio facts;
+- allowlisted observable safety-signal IDs;
 - a maximum of three steps;
 - a short speakable script;
 - a support-message draft;
 - one source-backed reframe;
 - source IDs and explicit unknowns.
 
-The composer cannot return phone numbers, URLs, risk, diagnoses, external
-action status, or free-form action identifiers.
+The model cannot assign the final tier. When it extracts any voice-derived
+danger signal, its intervention field must be null; returning coping content
+with danger is rejected. Application code merges the signal with tapped
+signals, reruns deterministic routing, and renders the fixed 112 route. The
+model cannot return phone numbers, URLs, diagnoses, external action status, or
+free-form action identifiers.
 
-### 10.4 Semantic validator
+### 10.3 Semantic validator
 
 Structured JSON is necessary but insufficient. Server validation rejects:
 
 - extra or missing keys;
 - wrong tier/action/resource authority;
 - more than three steps or more than two short script sentences;
-- unknown source or action IDs;
+- any source ID other than the exact selected route source, including a real
+  but irrelevant source, duplicate source, or service ID;
 - names, phone numbers, locations, substances, quantities, timing, or
   relationships not present in input;
 - diagnosis, medication, dosage, taper, detox, first-aid, or treatment advice;
@@ -448,15 +446,15 @@ Structured JSON is necessary but insufficient. Server validation rejects:
 Invalid output is discarded as a whole and replaced with the deterministic
 fallback. Partial output is never rendered.
 
-### 10.5 Deadlines and budgets
+### 10.4 Deadlines and budgets
 
 - Audio: ten seconds and 1 MB maximum.
 - Structured fields: fixed enums and short bounded strings.
 - Client total deadline: seven seconds.
-- Interpreter budget: 2.5 seconds when audio exists.
-- Composer budget: 3.5 seconds.
+- One provider call with a seven-second server deadline.
 - Automatic provider retries: none.
-- User-controlled retry: allowed without losing selections.
+- Audio requests cost three budget units; tap-only requests cost one.
+- Shared per-user ceilings: 10 units per ten minutes and 30 units per day.
 - Response body target: under 15 KB.
 
 Emergency rendering has no model or network dependency after the page is
@@ -542,46 +540,46 @@ account.
 
 ## 13. Data model and authorization
 
-### 13.1 `prevention_plans`
+### 13.1 `saved_plans`
 
-| Column                            | Purpose                                       |
-| --------------------------------- | --------------------------------------------- |
-| `user_id uuid primary key`        | References `auth.users(id) on delete cascade` |
-| `trigger_ids text[]`              | Allowlisted selected triggers                 |
-| `support_action_id text`          | Allowlisted action                            |
-| `tone text`                       | Direct, warm, or minimal                      |
-| `language text`                   | `en-IN`                                       |
-| `trusted_contact_id uuid null`    | Optional user-owned contact                   |
-| `safe_place_ciphertext text null` | Encrypted user label                          |
-| `safe_place_iv text null`         | Random AES-GCM IV                             |
-| `key_version smallint`            | Encryption-key version                        |
-| `created_at`, `updated_at`        | Server timestamps                             |
+| Column                     | Purpose                                       |
+| -------------------------- | --------------------------------------------- |
+| `user_id uuid primary key` | References `auth.users(id) on delete cascade` |
+| `ciphertext text`          | Encrypted validated plan payload              |
+| `iv text`                  | Random AES-GCM IV                             |
+| `auth_tag text`            | AES-GCM authentication tag                    |
+| `key_version smallint`     | Encryption-key version                        |
+| `created_at`, `updated_at` | Server timestamps                             |
 
 ### 13.2 `trusted_contacts`
 
-| Column                         | Purpose                                       |
-| ------------------------------ | --------------------------------------------- |
-| `id uuid primary key`          | Random identifier                             |
-| `user_id uuid`                 | References `auth.users(id) on delete cascade` |
-| `display_name_ciphertext text` | Encrypted name                                |
-| `display_name_iv text`         | Random IV                                     |
-| `phone_ciphertext text`        | Encrypted normalized E.164 number             |
-| `phone_iv text`                | Random IV                                     |
-| `relationship text`            | Allowlisted relationship label                |
-| `preferred_channel text`       | Call or share draft                           |
-| `key_version smallint`         | Encryption-key version                        |
-| `created_at`, `updated_at`     | Server timestamps                             |
+| Column                     | Purpose                                       |
+| -------------------------- | --------------------------------------------- |
+| `id uuid primary key`      | Random identifier                             |
+| `user_id uuid unique`      | References `auth.users(id) on delete cascade` |
+| `ciphertext text`          | Encrypted validated contact payload           |
+| `iv text`                  | Random AES-GCM IV                             |
+| `auth_tag text`            | AES-GCM authentication tag                    |
+| `key_version smallint`     | Encryption-key version                        |
+| `created_at`, `updated_at` | Server timestamps                             |
 
-### 13.3 Private rate-limit state
+### 13.3 Shared request-budget state
 
-A non-exposed `private.api_rate_limits` table stores:
+The RLS-enabled `public.request_budgets` table has no direct anonymous or
+authenticated table grants. An atomic, narrowly validated security-definer RPC
+stores:
 
-- HMAC-SHA256 subject identifier derived from account ID or IP and a server
-  salt;
-- window start, count, and expiry;
+- HMAC-SHA256 subject identifier derived from network context plus a
+  browser-generated anonymous UUID and a server secret;
+- ten-minute or daily budget kind, window start, and used cost;
 - no raw IP, request content, email, or phone.
 
-Expired rows are removed opportunistically.
+The API HMACs the subject before the RPC. Serverless instances therefore share
+one atomic budget suitable for the initial 100-user release. A separate global
+daily provider budget prevents rotating client identifiers from creating
+unbounded cost. An in-process budget is retained only for local development
+without Supabase. If configured shared storage fails, live personalization
+fails closed to the complete deterministic fallback.
 
 ### 13.4 Row-level security
 
@@ -772,7 +770,7 @@ Subsystem boundaries:
 - Gemini valid structured output.
 - Timeout, quota/5xx, malformed JSON, extra keys, unsafe semantic content,
   unknown source/action ID, and prompt injection.
-- Audio unsupported/oversized and interpreter safety recheck.
+- Audio unsupported/oversized and deterministic voice-signal safety recheck.
 - Auth callback and redirect allowlist.
 - Two-user RLS isolation.
 - Plan/contact ownership, encryption, export, clear, and cascade deletion.
@@ -798,7 +796,7 @@ The release command runs:
 
 1. format check;
 2. TypeScript compiler;
-3. ESLint;
+3. Oxlint with warnings denied;
 4. unit/integration tests with focused coverage;
 5. production build;
 6. dependency audit;
@@ -835,8 +833,7 @@ Non-secret release configuration:
 
 ```text
 CONTENT_VERSION=2026-07-25
-PROMPT_INTERPRETER_VERSION=haven-interpreter-1
-PROMPT_COMPOSER_VERSION=haven-composer-1
+PROMPT_INTERVENTION_VERSION=haven-intervention-2
 DEFAULT_JURISDICTION=IN
 DEMO_MODE=false
 ```

@@ -96,3 +96,16 @@ export function containsEmergencySignal(
 ): boolean {
   return signalIds.some((signalId) => EMERGENCY_SIGNALS.has(signalId));
 }
+
+/** Merges model-extracted observable signs for a deterministic policy recheck. */
+export function mergeVoiceSafetySignals(
+  input: SafetyInput,
+  voiceSignalIds: readonly ObservableSignalId[],
+): SafetyInput {
+  return {
+    ...input,
+    observableSignalIds: [
+      ...new Set([...input.observableSignalIds, ...voiceSignalIds]),
+    ],
+  };
+}

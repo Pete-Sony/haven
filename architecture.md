@@ -1,673 +1,900 @@
 # Haven Relay Architecture
 
-## 1. Document purpose
+**Status:** governing implementation architecture  
+**Product:** public, browser-based PromptWars application  
+**Jurisdiction:** India first; Kerala is an optional additive resource pack  
+**Audience:** adults navigating a high-load substance-use situation and trusted supporters  
+**Last reviewed:** 2026-07-25
 
-This document defines the implemented architecture of Haven Relay, a
-browser-only PromptWars application for adults navigating a substance-use
-related high-load moment and the people supporting them. It is the engineering
-source of truth for system boundaries, safety authority, Gemini integration,
-resource provenance, privacy, accessibility, verification, and deployment.
+## 1. Purpose and source hierarchy
 
-The architecture is intentionally narrow. Haven Relay is not a native mobile
-application, a chatbot, a medical device, a diagnostic system, a treatment
-provider, a monitoring service, or an emergency dispatcher.
+This document is the engineering source of truth for Haven Relay. It defines
+the product boundary, runtime topology, public contracts, deterministic safety
+authority, Gemini pipeline, cloud-account boundary, data model, privacy and
+security controls, verification gates, and release process.
 
-## 2. Architectural goals
+Implementation decisions must follow these sources in order:
 
-The system must:
+1. this architecture;
+2. [`README.md`](README.md), the Haven Relay product decision brief;
+3. the workspace [`INDEX.md`](../INDEX.md);
+4. the indexed Haven research pack in
+   [`../resources/haven-recovery-resources/`](../resources/haven-recovery-resources/);
+5. the India-specific safety and evaluation documents in
+   [`../resources/haven-recovery/docs/`](../resources/haven-recovery/docs/);
+6. the older Vite prototype only as visual and interaction reference.
 
-1. make the first useful action reachable without typing or login;
-2. route explicit observable danger before any provider or network call;
-3. use Gemini for bounded language personalization, not clinical decisions;
-4. preserve a complete and honestly labelled deterministic fallback;
-5. resolve every phone number, service, and source link from application data;
-6. let the user review every external handoff;
-7. expose no provider secret or unrestricted prompt to the browser;
-8. remain understandable, testable, resource-light, and deployable in minutes;
-9. keep the emergency shell usable when the network or model is unavailable;
-10. make implemented, fallback, and external-action states visually distinct.
+If sources disagree, India-specific safety policy, user privacy, and this
+architecture take precedence. The older U.S.-specific prototype must never
+leak U.S. phone numbers or claims into the release.
 
-## 3. Evaluation architecture
+## 2. Locked product decisions
 
-The supplied PromptWars evaluation material identifies Problem Statement
-Alignment as a high-impact anchor and five implementation benchmarks:
+- Haven Relay is a responsive web application, not a native mobile app.
+- It has no app-store package, native wrapper, install prompt, web-app
+  manifest, or service worker.
+- The urgent and emergency journeys work without login.
+- Google OAuth is used only for saving a calm-time prevention plan and trusted
+  contacts.
+- OAuth launches in testing mode on the generated production URL.
+- Supabase owns authentication and encrypted account data.
+- Gemini 3.6 Flash performs bounded context interpretation and wording.
+- Application code alone assigns risk tiers, actions, and resource IDs.
+- The public site and GitHub repository are public.
+- The first release is English (`en-IN`) only. Additional languages remain
+  disabled until native safety and lived-experience review.
+- The product stores no crisis history, intervention history, raw audio,
+  transcript, diagnosis, medication data, or precise GPS location.
+- There is no analytics, advertising, automated messaging, monitoring, contact
+  scraping, background microphone, camera, or location permission.
 
-| Benchmark | Architectural evidence |
+## 3. Goals and non-goals
+
+### 3.1 Goals
+
+1. Put the correct safety route ahead of generation.
+2. Complete the acute journey without typing or login.
+3. Turn taps and optional short audio into a concise, faithful next action.
+4. Give a person or supporter usable words for a human handoff.
+5. Make Gemini's contribution visible without giving it safety authority.
+6. Resolve facts, phone numbers, and URLs only from reviewed application data.
+7. Preserve a complete, honestly labelled deterministic fallback.
+8. Let users review every external handoff.
+9. Let signed-in users save, export, clear, and delete a calm-time plan and
+   trusted-contact details.
+10. Optimize first for Problem Statement Alignment and Code Quality, the two
+    highest-impact evaluation areas.
+
+### 3.2 Non-goals
+
+- Diagnosis, triage by AI, intoxication detection, clinical scoring, treatment
+  selection, medication, dosage, taper, or detox advice.
+- Autonomous calling, dispatch, message delivery, provider booking, location
+  sharing, or caregiver monitoring.
+- A chatbot, long conversation, AI memory, social feed, treatment inventory,
+  live map, or longitudinal recovery record.
+- Minors, clinical-effectiveness claims, regulatory-compliance claims, or a
+  real-world clinical release.
+- Machine-translated emergency guidance without qualified review.
+
+## 4. Evaluation architecture
+
+Problem Statement Alignment and Code Quality are the primary design filters.
+Security and Efficiency follow. Testing and Accessibility remain release
+gates even when the evaluator assigns them lower score impact.
+
+| Evaluation area | Required evidence |
 | --- | --- |
-| Code Quality | Pure safety and fallback functions; separate data, policy, client adapter, server adapter, UI, and tests; explicit contracts; no global mutable domain state |
-| Security | Server-only key; allowlisted enums and source IDs; bounded input/output; semantic rejection; no request-body logging; CSP and browser permission restrictions |
-| Efficiency | One bounded provider call; 5-second server timeout; 6.5-second client deadline; no database/auth/maps/analytics SDK; small static source registry |
-| Testing | Deterministic tests for emergency precedence, urgent routing, stable fallback, observable-fact scripts, and action honesty; build gate |
-| Accessibility | Complete tap path; semantic headings and fieldsets; visible focus; 48 px primary controls; reduced-motion mode; text alternative to speech; responsive reflow |
+| Problem Statement Alignment | One complete individual-to-human handoff plus caregiver emergency contrast visibly covers multimodality, GenAI, recovery, prevention, both roles, zero typing, emergency scripting, education, and contextual safety |
+| Code Quality | Strict TypeScript, small responsibility-focused modules, shared runtime schemas, pure policy functions, documented contracts, clean dependency graph, zero type/lint/build warnings |
+| Security | Server-only secrets, strict input/output validation, emergency defence in depth, RLS, encrypted contact fields, rate limiting, CSP, CSRF/origin checks, redacted logs |
+| Efficiency | Static source retrieval, bounded audio, no live search or AI tools, no automatic retry loop, server rendering by default, provider deadlines, small response and bundle budgets |
+| Testing | Safety truth table, validator/red-team fixtures, RLS isolation, account lifecycle, AI failure paths, end-to-end journeys, production smoke tests |
+| Accessibility | WCAG 2.2 AA target, complete keyboard/tap path, semantic controls, visible focus, status announcements, reflow, reduced motion, audio alternatives |
+| Google Services | Real Gemini 3.6 Flash structured output and Google OAuth materially support the experience; neither is decorative |
 
-Conditional Google-services evidence is the server-owned Gemini structured-output
-adapter. Gemini is materially useful: it adapts the sentence and support draft
-to structured context and optional speech. It never controls emergency routing,
-resource selection, message delivery, or hidden external actions.
+The judge-facing technical proof may show the policy tier, model ID, prompt
+version, source IDs, validator status, and fallback status. It must not show
+chain-of-thought, secrets, raw audio, contact data, or sensitive user text.
 
-## 4. System context
+## 5. System context
 
 ```text
 Adult seeking support ─┐
-                       ├── HTTPS ──> Haven Relay web application
-Caregiver/supporter ───┘                   │
-                                          ├── local safety policy
-                                          ├── local resource registry
-                                          ├── browser speech APIs (optional)
-                                          ├── browser share/clipboard (user action)
-                                          └── /api/intervention
+                       ├── HTTPS ──> Haven Relay public web app
+Trusted supporter ─────┘                   │
+                                          ├── deterministic safety policy
+                                          ├── fixed India resource registry
+                                          ├── optional bounded audio capture
+                                          ├── read/copy/call/share adapters
+                                          └── optional account workspace
                                                    │
-                                                   └── Gemini API (optional)
-
-Emergency Response Support System <── tel:112 user action
-NMBA / Tele-MANAS                 <── tel: links user action
-Official government sources      <── source links user action
+                              ┌────────────────────┴────────────────────┐
+                              ▼                                         ▼
+                       Next.js server                            Supabase Auth
+                    validation + policy                         Google OAuth PKCE
+                              │                                         │
+                   ┌──────────┴──────────┐                              ▼
+                   ▼                     ▼                     Supabase Postgres
+            Gemini 3.6 Flash       deterministic fallback       encrypted plan/contact
 ```
 
-No Haven-controlled database, account provider, analytics pipeline, mapping
-service, camera, or background location service exists.
+External calls are limited to Gemini generation, Supabase authentication/data,
+official source links, and explicit user-triggered phone/share actions.
 
-## 5. Container view
+## 6. Runtime and deployment topology
+
+### 6.1 Web application
+
+Use the current stable Next.js App Router release supported by Sites, React,
+strict TypeScript, and npm with a committed lockfile.
+
+- Server components render public content and account reads by default.
+- Client components are limited to the interactive relay state machine, audio,
+  speech synthesis, clipboard/share, and account forms.
+- CSS Modules and shared design tokens preserve the current calm visual
+  direction without shipping a large component framework.
+- Fonts use a local/system stack; no runtime font request is required.
+- The application remains usable at desktop and narrow browser widths, but is
+  never packaged or described as a mobile app.
+
+### 6.2 Production hosting
+
+Sites owns the production deployment:
+
+1. create the Sites project once;
+2. persist the opaque project ID in `.openai/hosting.json`;
+3. configure runtime secrets through Sites environment variables;
+4. push the exact source commit to GitHub and the Sites source repository;
+5. build a supported OpenNext archive from that commit;
+6. save a Sites version with the exact Git SHA;
+7. publish the site publicly;
+8. inspect deployment status and production worker logs.
+
+The exact deployed source must match the public GitHub `main` commit.
+
+### 6.3 External services
+
+| Service | Responsibility | Data boundary |
+| --- | --- | --- |
+| Gemini API | Context interpretation and bounded wording | Structured selections, optional short audio, relationship label, reviewed source claims; never phone number, contact name, precise location, or history |
+| Supabase Auth | Google OAuth and session identity | Google basic identity scopes only |
+| Supabase Postgres | User-owned calm plan and contacts | Encrypted contact name, phone, and safe-place label; structured non-sensitive preferences |
+| Sites | Next.js runtime, environment secrets, production versions, logs | Technical runtime metadata; application must not log user content |
+| GitHub | Public source history | No credentials, environment values, generated builds, or user data |
+
+## 7. Information architecture and journeys
+
+### 7.1 Public routes
+
+| Route | Purpose |
+| --- | --- |
+| `/` | Product explanation, role entry, safety limitations, resource summary |
+| `/relay` | Individual and caregiver zero-typing journey |
+| `/emergency` | Fixed India emergency renderer and base dispatcher script |
+| `/plan` | Calm-time plan editor; sign-in required only when saving |
+| `/resources` | Reviewed India national and optional Kerala sources |
+| `/privacy` | Data inventory, processor disclosure, retention, user controls |
+| `/terms` | Intended-use and product limitation terms |
+| `/report` | Minimal-data problem report that never interrupts emergency action |
+
+### 7.2 Account routes
+
+| Route | Purpose |
+| --- | --- |
+| `/account` | Saved plan, trusted contacts, export, sign-out, delete account |
+| `/auth/callback` | Supabase PKCE code exchange and safe redirect |
+
+### 7.3 Acute relay state machine
 
 ```text
-┌──────────────────────────────── Browser ────────────────────────────────┐
-│ React UI                                                               │
-│  ├── landing and role selection                                        │
-│  ├── zero-typing context capture                                       │
-│  ├── explicit observable-danger checks                                 │
-│  ├── emergency renderer                                                │
-│  ├── intervention renderer                                             │
-│  ├── reviewed share handoff                                            │
-│  └── calm-plan local storage                                           │
-│                                                                        │
-│ Domain modules                                                         │
-│  ├── routeSafety()              pure deterministic policy              │
-│  ├── buildEmergencyScript()     pure confirmed-facts composer          │
-│  ├── createFallback()           pure reviewed fixture                  │
-│  └── resources                  fixed source/number registry           │
-│                                                                        │
-│ Platform adapters                                                      │
-│  ├── requestIntervention()      one API request + timeout + fallback    │
-│  ├── SpeechRecognition          optional input                         │
-│  ├── speechSynthesis            optional output                        │
-│  ├── navigator.share/clipboard  explicit external handoff              │
-│  └── service worker             static emergency-shell cache           │
-└───────────────────────────────────┬────────────────────────────────────┘
-                                    │ same-origin HTTPS
-┌──────────────────────── Vercel serverless function ────────────────────┐
-│ POST /api/intervention                                                │
-│  1. method and body-size gate                                         │
-│  2. enum, length, range, and signal validation                        │
-│  3. reject any emergency signal                                       │
-│  4. construct bounded system task and untrusted-context section       │
-│  5. call configured Gemini model once with JSON schema                │
-│  6. parse, length-check, source-check, and semantic-check output       │
-│  7. return safe artifact or typed failure                             │
-└───────────────────────────────────┬────────────────────────────────────┘
-                                    │ x-goog-api-key; 5-second deadline
-                           ┌────────▼────────┐
-                           │ Gemini API      │
-                           │ structured JSON │
-                           └─────────────────┘
+landing
+  └── role_selected
+        └── context_capture
+              └── explicit_safety_check
+                    ├── emergency
+                    ├── urgent_support
+                    │     └── generating ──> result | fallback
+                    └── coping
+                          └── generating ──> result | fallback
+
+result | fallback
+  ├── speaking
+  ├── copied
+  ├── share_preview
+  ├── external_handoff_opened
+  ├── external_handoff_cancelled
+  └── restart
 ```
 
-## 6. Repository structure
+The state model never treats `external_handoff_opened` as sent, connected, or
+acknowledged.
 
-```text
-haven-relay/
-├── api/
-│   └── intervention.js       server-owned Gemini boundary and validators
-├── public/
-│   ├── manifest.webmanifest  web metadata; no native app packaging
-│   └── sw.js                 minimal application-shell cache
-├── src/
-│   ├── data/
-│   │   └── resources.js      official services and reviewed lesson metadata
-│   ├── lib/
-│   │   ├── intervention.js   browser API adapter and fallback selection
-│   │   └── safety.js         deterministic tiers, scripts, and fixtures
-│   ├── App.jsx               accessible state flow and platform handoffs
-│   ├── main.jsx              React entry and production SW registration
-│   └── styles.css            tokens, layouts, focus, reflow, reduced motion
-├── tests/
-│   └── safety.test.js        policy and fallback unit tests
-├── .env.example              server-only configuration contract
-├── architecture.md           this document
-├── index.html                browser entry document
-├── package.json              scripts and pinned dependency ranges
-└── vercel.json               build, SPA routing, and security headers
-```
+### 7.4 Primary individual journey
 
-Generated folders (`node_modules`, `dist`, `.vercel`) and local secrets are
-excluded from Git.
+1. Choose **I need help now**.
+2. Select situation, goal, feeling, intensity band, and whether alone.
+3. Optionally record up to ten seconds of audio.
+4. Answer observable danger questions.
+5. If no emergency route applies, receive at most three actions, a short
+   speakable script, a support-message draft, and one reviewed source card.
+6. Read, hear, copy, or review the draft before opening an external app.
+7. Keep **Something changed / Call 112** visible.
 
-## 7. Primary runtime flows
+### 7.5 Caregiver journey
 
-### 7.1 Non-emergency individual relay
+1. Choose **I am supporting someone**.
+2. Select observable facts rather than a diagnosis.
+3. Check both medical danger and the caregiver's physical safety.
+4. Emergency signals render the fixed route.
+5. Otherwise generate one validating sentence, one small choice or question,
+   and an optional boundary.
+6. Never advise restraint, coercion, deception, threat, or secret monitoring.
 
-1. The user chooses **I need help now**.
-2. Taps capture situation, emotion, goal, intensity, and whether the user is
-   alone. Voice context is optional and capped at 240 characters.
-3. The user explicitly confirms whether observable danger signs are present.
-4. `routeSafety()` returns `coping` or `urgent_support`.
-5. The UI renders the safety decision before invoking the model adapter.
-6. `requestIntervention()` makes one same-origin POST request.
-7. The server validates input and calls Gemini once.
-8. The server accepts only schema-conforming, allowlisted, semantically safe
-   output.
-9. A safe model result or reviewed fallback renders in the same card shape.
-10. The user may hear or copy the sentence, review a support draft, or open an
-    official source.
+### 7.6 Emergency journey
 
-### 7.2 Caregiver relay
+1. Any explicit emergency signal causes synchronous navigation to the fixed
+   emergency renderer.
+2. **Call 112 now** and the deterministic base dispatcher script render before
+   any provider request.
+3. Missing location, callback number, substance, and timing remain explicitly
+   unknown.
+4. A phone call begins only after a user tap.
+5. The user is told to follow the dispatcher's instructions.
+6. An optional, non-blocking Gemini call may simplify the confirmed script
+   after the base script is visible. Invalid output is ignored atomically.
 
-The caregiver uses the same safety gate but receives language framed around
-observable facts, calm presence, one small choice, and supporter boundaries.
-The caregiver interface never exposes another person's activity history,
-location, sobriety status, or private data because none is collected.
+### 7.7 Prevention-plan journey
 
-### 7.3 Emergency route
-
-1. Any selected emergency signal causes `routeSafety()` to return `emergency`.
-2. No call to `/api/intervention` occurs.
-3. The emergency renderer displays **Call 112 now** and the official registry
-   record synchronously from the JavaScript bundle.
-4. `buildEmergencyScript()` includes only the facts selected by the user.
-   Missing location is explicitly shown as `[say your location]`.
-5. A phone call begins only after the user taps the `tel:112` link and confirms
-   through their device.
-6. The user is told to follow the dispatcher's instructions. The application
-   does not generate first-aid, medication, dosing, detox, or monitoring advice.
-
-### 7.4 Provider failure
-
-Timeout, offline state, missing key, non-2xx provider response, invalid JSON,
-unknown source ID, prohibited language, or a schema/length failure produces the
-same result: discard the output and render `createFallback()`.
-
-The fallback badge reads **Reviewed fallback · provider unavailable**. It never
-uses an AI confidence score and never implies that Gemini generated the card.
-
-### 7.5 Share handoff
-
-1. The intervention contains a draft, not a send command.
-2. The exact draft is shown in a modal before any OS handoff.
-3. **Open share options** invokes `navigator.share()` only on a user gesture.
-4. Unsupported sharing falls back to clipboard copy.
-5. Haven does not show *sent*, *delivered*, or *acknowledged*, because it cannot
-   observe those states.
-
-### 7.6 Calm plan
-
-Support name, safe place, and preferred tone are optional. They are stored only
-in browser `localStorage` after explicit confirmation. The modal warns that
-another person using the same browser profile may see the plan. Calm-plan data
-is not sent to `/api/intervention` in the implemented release.
+1. Select a likely trigger, preferred action, tone, language, safe-place label,
+   and trusted contact.
+2. Rehearse one generated support sentence.
+3. Sign in with Google only when saving.
+4. Review exactly what will be stored.
+5. Save through the authenticated server boundary.
+6. Export, clear, or delete data at any time.
 
 ## 8. Deterministic safety authority
 
-Safety is policy-owned, not prompt-owned.
+Routing precedence is `emergency` → `urgent_support` → `coping`. The first
+matching rule wins.
 
-```text
-any explicit emergency signal?
-    yes ──> emergency; modelMayPersonalize=false; resource=in.erss.112
-    no
-    │
-urgent signal OR intensity >= 8 while alone?
-    yes ──> urgent_support; verified human-support resources visible
-    no  ──> coping; bounded personalized communication allowed
-```
+### 8.1 Emergency signals
 
-Emergency signal IDs:
+- person not responding, unconscious, or cannot be awakened;
+- absent, gasping, or seriously abnormal breathing;
+- collapse or seizure;
+- immediate suicide/self-harm attempt or inability to stay safe;
+- serious injury, uncontrolled bleeding, or immediate physical danger;
+- caregiver reports that they are currently unsafe.
 
-- `not_responding`
-- `abnormal_breathing`
-- `seizure`
-- `collapsed`
-- `immediate_danger`
+`Not sure` follows the conservative emergency route. The interface asks about
+observable signs and never requires a diagnosis.
 
-The API separately rejects a request containing any emergency signal. This is
-defence in depth against a modified client trying to reach the model on an
-emergency path.
+### 8.2 Urgent-support signals
+
+- strong craving while alone;
+- responsive recent use or unknown amount/substance without an emergency sign;
+- severe distress or concern that the situation may worsen;
+- withdrawal concern without a selected emergency sign;
+- self-harm thoughts without a stated immediate attempt or plan.
+
+Urgent support always keeps the 112 escape action visible and exposes verified
+human support before generated wording.
+
+### 8.3 Coping route
+
+Use only when the person is responsive and reports no emergency or urgent
+signal. Return at most three non-medical actions and a support-person draft.
+
+### 8.4 Defence in depth
+
+- The client policy routes synchronously.
+- The server independently re-runs the safety policy.
+- The normal intervention endpoint rejects emergency-bearing input.
+- The model receives the fixed tier and cannot return a tier.
+- Any output that changes action/resource authority is rejected.
 
 ## 9. Public contracts
 
-### 9.1 Client request
+All compile-time interfaces have matching Zod runtime schemas.
 
 ```ts
-interface InterventionInput {
-  role: "individual" | "caregiver";
-  situation: "social_pressure" | "stress" | "loneliness" | "pain";
-  intensity: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10;
-  emotion: "overwhelmed" | "anxious" | "ashamed" | "angry" | "numb";
-  goal: "leave_safely" | "call_someone" | "get_through_minute";
-  tone: "direct" | "calm" | "gentle";
-  alone: boolean;
-  signalIds: EmergencySignalId[];
-  voiceContext: string; // 0..240 characters
+type Role = "individual" | "caregiver";
+type RiskTier = "emergency" | "urgent_support" | "coping";
+type Language = "en-IN";
+
+interface Jurisdiction {
+  country: "IN";
+  state?: "KL";
 }
-```
 
-### 9.2 Policy decision
+interface SafetyInput {
+  schemaVersion: "1.0";
+  role: Role;
+  situationIds: string[];
+  observableSignalIds: string[];
+  intensityBand: "manageable" | "strong" | "overwhelming";
+  goalId: string;
+  tone: "direct" | "warm" | "minimal";
+  language: Language;
+  jurisdiction: Jurisdiction;
+  isAlone: boolean;
+  supportRelationship?: string;
+}
 
-```ts
 interface SafetyDecision {
-  tier: "emergency" | "urgent_support" | "coping";
+  tier: RiskTier;
   reasonCode: string;
-  modelMayPersonalize: boolean;
+  actionIds: string[];
   resourceIds: string[];
+  modelMayPersonalize: boolean;
 }
-```
 
-### 9.3 Intervention artifact
+interface NormalizedFacts {
+  explicitFacts: string[];
+  unknownFacts: string[];
+  safetyConfirmationSignalIds: string[];
+}
 
-```ts
 interface InterventionResult {
+  schemaVersion: "1.0";
   headline: string;
-  immediateAction: string;
+  steps: Array<{actionId: string; label: string}>;
+  spokenSummary: string;
   verbatimScript: string;
   supportMessageDraft: string;
   mindsetReframe: string;
-  lessonId: "cravingWave" | "caregiverPresence";
-  sourceIds: ["haven.craving-wave.v1" | "haven.caregiver-presence.v1"];
-  provider: string;
-  demoMode: boolean;
+  sourceIds: string[];
+  unknownFacts: string[];
+  provider: "gemini-3.6-flash" | "deterministic";
+  promptVersion: string;
+  contentVersion: string;
+  fallbackReason?: string;
+}
+
+interface ExternalActionState {
+  state:
+    | "draft"
+    | "reviewed"
+    | "handoff_opened"
+    | "cancelled"
+    | "failed";
 }
 ```
 
-No response field grants permission to call, message, dispatch, store, monitor,
-or share anything.
+### 9.1 Server endpoints
+
+| Endpoint | Contract |
+| --- | --- |
+| `POST /api/interventions` | Bounded multipart request with serialized `SafetyInput` and optional audio; returns validated `InterventionResult`, `safety_recheck`, or typed fallback |
+| `POST /api/emergency-script` | Optional post-render wording assistance using confirmed facts and a fixed emergency decision |
+| `GET /api/account/plan` | Return the authenticated user's decrypted plan |
+| `PUT /api/account/plan` | Validate, encrypt, and upsert one active plan |
+| `DELETE /api/account/plan` | Delete the active plan |
+| `GET /api/account/contacts` | Return decrypted user-owned contacts |
+| `POST /api/account/contacts` | Validate, encrypt, and create a contact |
+| `PATCH /api/account/contacts/:id` | Update an authenticated user-owned contact |
+| `DELETE /api/account/contacts/:id` | Delete an authenticated user-owned contact |
+| `DELETE /api/account` | Cascade-delete saved data and Supabase identity |
+| `GET /api/health` | Release SHA and dependency readiness without secret values |
+
+All writes require expected origin, authenticated ownership where applicable,
+bounded bodies, runtime schemas, and typed errors. Stack traces and provider
+payloads never reach the browser.
 
 ## 10. Gemini architecture
 
-### 10.1 Provider choice
+### 10.1 Provider
 
-`GEMINI_MODEL` is configurable server-side and defaults to
-`gemini-2.5-flash`, a stable structured-output capable model. The exact
-available model must be verified in the deployment account before a demo.
-Changing the model does not change public contracts or safety authority.
+Use the official `@google/genai` SDK and exact stable model ID
+`gemini-3.6-flash`. `GEMINI_MODEL` remains environment-configurable for
+controlled migration, but production and test evidence record the exact model.
 
-### 10.2 Prompt boundary
+Use structured outputs. Do not send deprecated sampling parameters, request
+chain-of-thought, enable tools, search the web, or expose action functions.
 
-The server prompt contains:
+### 10.2 Stage 1: context interpreter
 
-- the single system role: personalize bounded support language;
-- the policy-owned tier;
-- normalized structured fields;
-- optional voice context clearly delimited as untrusted data;
-- prohibited output categories;
-- the one allowed source ID;
-- a JSON schema supplied through the provider configuration.
+The interpreter runs only when optional audio exists. Tap-only requests use
+the deterministic normalized selections directly.
 
-The prompt does not ask for hidden reasoning, autonomous actions, web search,
-resource selection, diagnosis, or risk classification.
+Inputs:
 
-### 10.3 Structured output
+- validated `SafetyInput`;
+- bounded audio;
+- a statement that audio is untrusted user data.
 
-Gemini receives `responseMimeType: application/json` and a JSON schema. Schema
-conformance is necessary but not sufficient. Server code additionally checks:
+Outputs:
 
-- all required string fields exist;
-- string length is between 3 and 360 characters;
-- exactly one source ID is returned;
-- the source ID is allowlisted;
-- prohibited medical, confidence, or safety language is absent.
+- explicit facts;
+- unknown facts;
+- allowlisted safety-confirmation signal IDs.
 
-Invalid output is discarded atomically. Partial model output is never rendered.
+The interpreter cannot assign a tier. Any returned safety-confirmation signal
+causes a fixed confirmation screen; it never causes reassuring generation.
 
-### 10.4 Call budget
+### 10.3 Stage 2: script composer
 
-- maximum provider calls per user action: one;
-- client deadline: 6.5 seconds;
-- server/provider deadline: 5 seconds;
-- transcript budget: 240 characters;
-- request-body budget: 12 KB;
-- source records in prompt: one allowlisted ID;
-- retry loop: none.
+Inputs:
 
-This keeps latency, cost, failure surface, and prompt-injection exposure small.
+- validated facts;
+- the application-owned `SafetyDecision`;
+- permitted action labels;
+- a few approved source claims;
+- relationship label, language, and tone.
 
-## 11. Resource governance
+Outputs:
 
-Phone numbers, service names, links, and verification dates live in
-`src/data/resources.js`, never in model output. The current India national pack
-contains:
+- a maximum of three steps;
+- a short speakable script;
+- a support-message draft;
+- one source-backed reframe;
+- source IDs and explicit unknowns.
 
-| ID | Purpose | Number |
-| --- | --- | --- |
-| `in.erss.112` | immediate emergency action | 112 |
-| `in.nmba.14446` | substance-use counselling/information/referral | 14446 |
-| `in.telemanas.14416` | national mental-health support | 14416 |
+The composer cannot return phone numbers, URLs, risk, diagnoses, external
+action status, or free-form action identifiers.
 
-The registry records official source URLs and a review date. “Reviewed” means
-the published government source was checked; it is not a claim that a test call
-was placed, that availability is guaranteed, or that the service is suitable
-for every person.
+### 10.4 Semantic validator
 
-Before any real-world release:
+Structured JSON is necessary but insufficient. Server validation rejects:
 
-- recheck each official page and phone number;
-- record a named content owner and next-review date;
-- suspend stale or unverifiable records;
-- obtain qualified Indian clinical, crisis, harm-reduction, accessibility, and
-  lived-experience review.
+- extra or missing keys;
+- wrong tier/action/resource authority;
+- more than three steps or more than two short script sentences;
+- unknown source or action IDs;
+- names, phone numbers, locations, substances, quantities, timing, or
+  relationships not present in input;
+- diagnosis, medication, dosage, taper, detox, first-aid, or treatment advice;
+- false reassurance, confidence scores, efficacy claims, stigma, coercion, or
+  action-delivery claims;
+- URLs or phone-number-like strings in generated fields.
 
-## 12. Security and privacy
+Invalid output is discarded as a whole and replaced with the deterministic
+fallback. Partial output is never rendered.
 
-### 12.1 Trust boundaries
+### 10.5 Deadlines and budgets
 
-Untrusted data includes all browser request fields, speech transcripts, model
-output, and service-worker cache entries. Trusted policy and resource records
-are application source under version control.
+- Audio: ten seconds and 1 MB maximum.
+- Structured fields: fixed enums and short bounded strings.
+- Client total deadline: seven seconds.
+- Interpreter budget: 2.5 seconds when audio exists.
+- Composer budget: 3.5 seconds.
+- Automatic provider retries: none.
+- User-controlled retry: allowed without losing selections.
+- Response body target: under 15 KB.
 
-### 12.2 Secret handling
+Emergency rendering has no model or network dependency after the page is
+loaded. The product does not claim offline operation.
 
-- `GEMINI_API_KEY` exists only in the server deployment environment.
-- No `VITE_` prefix is used for the provider key.
-- The client bundle contains no key and no provider authorization logic.
-- `.env`, `.env.local`, and `.vercel` are ignored.
+## 11. Resource registry
 
-### 12.3 Input and output controls
+Phone numbers, service names, URLs, jurisdiction, allowed tiers, and review
+dates are application records, never model output.
 
-- POST is the only accepted API method.
-- Body size, enums, integer ranges, booleans, arrays, signals, and transcript
-  length are checked.
-- An emergency-bearing request is rejected by the server even if the browser
-  decision was modified.
-- Output uses React text rendering; no `dangerouslySetInnerHTML` exists.
-- Model source IDs and lengths are allowlisted.
-- Request and response bodies are not logged by application code.
+Required record fields:
 
-### 12.4 Browser headers
-
-Vercel applies:
-
-- Content Security Policy limited to the same origin;
-- `X-Content-Type-Options: nosniff`;
-- `X-Frame-Options: DENY`;
-- `frame-ancestors 'none'`;
-- strict-origin referrer policy;
-- camera and geolocation permissions disabled.
-
-Microphone access is not granted globally. Browser speech recognition is
-created only after a direct user action.
-
-### 12.5 Data minimization
-
-There is no account, server persistence, database, analytics, passive
-monitoring, background microphone, camera, or location collection. Browser
-speech implementations may use a platform speech service; the UI describes
-voice as optional and never fabricates a transcript when unavailable.
-
-## 13. Accessibility
-
-The accessibility target is WCAG 2.2 AA plus crisis-oriented stress usability.
-
-Implemented provisions:
-
-- the complete primary journey is tap/keyboard operable without speech;
-- headings, landmarks, `fieldset`, `legend`, labels, and dialog roles organize
-  the interface;
-- primary buttons meet or exceed 48 CSS px;
-- selected choices include shape/check state rather than color alone;
-- `:focus-visible` provides a high-contrast focus ring;
-- text remains present when read-aloud is used;
-- speech unsupported/error states are explicit and non-blocking;
-- the layout reflows to one column without horizontal scrolling;
-- reduced-motion preference removes nonessential movement;
-- emergency red is paired with icons, headings, and explicit language;
-- call, copy, share, and source actions have visible text labels.
-
-Required human verification before release:
-
-- keyboard-only traversal and dialog focus containment;
-- VoiceOver/NVDA/TalkBack announcement order;
-- 200% and 400% zoom;
-- contrast measurement;
-- one-handed use at narrow browser widths;
-- cognitive walkthrough with lived-experience reviewers.
-
-Responsive browser support does not turn the product into a native mobile app.
-
-## 14. Efficiency and resilience
-
-The production design deliberately excludes database, auth, maps, chat
-history, camera/media SDKs, analytics, and multiple model calls. Static assets
-are bundled by Vite and can be cached. The service worker uses network-first
-fetch with a cached application-shell fallback.
-
-Emergency data is part of the client bundle and does not depend on:
-
-- Gemini;
-- the serverless function;
-- a database;
-- microphone availability;
-- location permission;
-- an authenticated session.
-
-The CSS uses system fonts, eliminating a render-blocking external font request
-and improving cold-start/offline behavior.
-
-## 15. Verification strategy
-
-### 15.1 Automated unit tests
-
-`npm test` currently proves:
-
-- emergency precedence over lower-risk context;
-- high intensity while alone routes to urgent human support;
-- ordinary context remains on the coping route;
-- emergency scripts include only selected observable facts and explicit
-  unknown location;
-- fallback output is deterministic;
-- fallback output never claims a message was sent or delivered.
-
-### 15.2 Build gate
-
-`npm run verify` runs tests followed by a production Vite build. The build
-validates module resolution and produces the deployable `dist` artifact.
-
-### 15.3 Required browser checks
-
-Before submission:
-
-1. run the individual non-emergency path;
-2. run the caregiver non-emergency path;
-3. select each danger signal and confirm no `/api/intervention` call occurs;
-4. block the API and confirm the labelled fallback;
-5. deny microphone and complete the tap path;
-6. open/cancel the share sheet and confirm no delivery claim;
-7. verify keyboard focus and Escape/close behavior;
-8. inspect narrow and desktop screenshots;
-9. load the built application with the network disabled and open emergency
-   content;
-10. inspect the client bundle for `GEMINI_API_KEY` and secret values.
-
-### 15.4 Safety red-team cases
-
-The next automated layer should cover modified-client requests, prompt
-injection in `voiceContext`, provider invalid JSON, unknown source IDs,
-prohibited medical wording, timeout, and excessive field lengths. Any failure
-uses the reviewed fallback; it never attempts a repair loop with the model.
-
-## 16. Deployment
-
-Vercel is the deployment target:
-
-```text
-GitHub repository
-    └── Vercel build: npm run build
-            ├── static dist/ web app
-            └── api/intervention.js serverless function
+```ts
+interface ResourceRecord {
+  id: string;
+  name: string;
+  jurisdiction: "IN" | "IN-KL";
+  tiers: RiskTier[];
+  phone: string | null;
+  alternatePhone?: string;
+  ctaKind: "call" | "open_directory";
+  sourceUrl: string;
+  serviceScope: string;
+  lastVerified: string;
+  recheckAt: string;
+  enabled: boolean;
+}
 ```
 
-Required environment variables:
+### 11.1 India national pack
 
-| Variable | Required | Scope |
+| ID | Action | Permitted tiers |
 | --- | --- | --- |
-| `GEMINI_API_KEY` | optional for fallback-only; required for live AI | server only |
-| `GEMINI_MODEL` | optional | server only |
+| `in.erss.112` | Call 112 | emergency |
+| `in.nmba.14446` | Call 14446 | urgent support, coping |
+| `in.telemanas.14416` | Call 14416 or official alternate | urgent support, coping |
 
-The application must deploy and operate in fallback mode before model
-configuration. Production verification must distinguish:
+### 11.2 Optional Kerala pack
 
-- application deployment health;
-- Gemini environment/configuration health;
-- external government-service availability.
+Kerala activates only after explicit state selection and supplements rather
+than replaces the national pack:
 
-One cannot be inferred from another.
+- `in.kl.disha.1056`;
+- `in.kl.vimukthi.directory`.
 
-## 17. Failure-mode table
+Expired, disabled, unreviewed, or unknown records cannot render or enter model
+context. Release verification rechecks the official government pages.
 
-| Failure | User-visible behavior | Safety invariant |
+## 12. Authentication and account lifecycle
+
+### 12.1 Google OAuth
+
+Supabase manages Google OAuth using PKCE and cookie-based SSR sessions.
+
+- Request only `openid`, `email`, and `profile`.
+- Do not request Google Contacts.
+- Validate redirects against an allowlist.
+- Exchange the authorization code only in `/auth/callback`.
+- Validate server identity with `auth.getUser()`, not untrusted client claims.
+- Keep urgent routes public if auth is unavailable.
+- Launch in Google testing mode; test-user restrictions are disclosed.
+
+### 12.2 Session security
+
+- Secure, HTTP-only, SameSite cookies in production.
+- Short, bounded post-auth redirect paths; no open redirect.
+- Origin and CSRF checks for state-changing endpoints.
+- No authorization decision uses user-editable Google metadata.
+- Sign-out clears the Supabase session and decrypted client state.
+
+### 12.3 Account deletion
+
+Deletion requires an authenticated confirmation screen. The server:
+
+1. verifies the current user;
+2. deletes user-owned rows through cascade constraints;
+3. deletes the Supabase Auth user with the server-only service credential;
+4. clears the session;
+5. returns no deleted content.
+
+The user can delete the plan or individual contacts without deleting the
+account.
+
+## 13. Data model and authorization
+
+### 13.1 `prevention_plans`
+
+| Column | Purpose |
+| --- | --- |
+| `user_id uuid primary key` | References `auth.users(id) on delete cascade` |
+| `trigger_ids text[]` | Allowlisted selected triggers |
+| `support_action_id text` | Allowlisted action |
+| `tone text` | Direct, warm, or minimal |
+| `language text` | `en-IN` |
+| `trusted_contact_id uuid null` | Optional user-owned contact |
+| `safe_place_ciphertext text null` | Encrypted user label |
+| `safe_place_iv text null` | Random AES-GCM IV |
+| `key_version smallint` | Encryption-key version |
+| `created_at`, `updated_at` | Server timestamps |
+
+### 13.2 `trusted_contacts`
+
+| Column | Purpose |
+| --- | --- |
+| `id uuid primary key` | Random identifier |
+| `user_id uuid` | References `auth.users(id) on delete cascade` |
+| `display_name_ciphertext text` | Encrypted name |
+| `display_name_iv text` | Random IV |
+| `phone_ciphertext text` | Encrypted normalized E.164 number |
+| `phone_iv text` | Random IV |
+| `relationship text` | Allowlisted relationship label |
+| `preferred_channel text` | Call or share draft |
+| `key_version smallint` | Encryption-key version |
+| `created_at`, `updated_at` | Server timestamps |
+
+### 13.3 Private rate-limit state
+
+A non-exposed `private.api_rate_limits` table stores:
+
+- HMAC-SHA256 subject identifier derived from account ID or IP and a server
+  salt;
+- window start, count, and expiry;
+- no raw IP, request content, email, or phone.
+
+Expired rows are removed opportunistically.
+
+### 13.4 Row-level security
+
+Every exposed table has RLS enabled and explicit `authenticated` policies:
+
+- `select`: `(select auth.uid()) = user_id`;
+- `insert`: `with check ((select auth.uid()) = user_id)`;
+- `update`: matching `using` and `with check`;
+- `delete`: matching `using`.
+
+Indexes cover `user_id` and foreign-key fields. Anonymous users have no table
+privileges. The service role exists only in Sites server secrets.
+
+## 14. Sensitive-field encryption
+
+Contact names, phone numbers, and safe-place labels use server-side
+AES-256-GCM through Web Crypto.
+
+- `CONTACT_DATA_KEY_V1` is a 32-byte secret in Sites.
+- Every encrypted field gets a new random 96-bit IV.
+- Associated data binds ciphertext to `user_id`, record ID, field name, and key
+  version.
+- Ciphertext, IV, and key version are stored; the key is never stored in
+  Supabase or returned to the browser.
+- Decryption occurs only after authentication and ownership checks.
+- Key rotation reads old versions and rewrites with the newest version during
+  a verified update.
+
+Contact names and phone numbers never enter Gemini prompts. Generation receives
+only a relationship label; the browser inserts the decrypted display name into
+a validated placeholder after generation.
+
+## 15. Privacy and logging
+
+### 15.1 Stored
+
+- Supabase identity required for OAuth.
+- User-confirmed calm-plan selections.
+- Encrypted contact name and phone.
+- Encrypted non-precise safe-place label.
+- Technical creation/update timestamps.
+
+### 15.2 Not stored
+
+- Crisis selections, interventions, generated scripts, audio, transcript,
+  location, diagnosis, medication, substance history, share contents, or
+  call/message outcome.
+
+### 15.3 Provider disclosure
+
+Before audio upload, explain that the audio leaves the browser for Gemini
+processing. Haven discards it after the request. Do not promise that the
+provider has zero retention; link to the applicable provider terms.
+
+### 15.4 Operational telemetry
+
+Allowed fields:
+
+- random request ID;
+- broad route ID and tier;
+- release SHA;
+- model and prompt version;
+- source IDs and content version;
+- latency, response status, schema-valid flag, fallback reason.
+
+Forbidden fields:
+
+- raw request/response body, transcript, audio, generated text, email, contact
+  name/phone, safe-place label, location, or OAuth token.
+
+## 16. Security architecture
+
+### 16.1 Threats and controls
+
+| Threat | Control |
+| --- | --- |
+| Modified client bypasses safety | Server independently validates and routes; emergency input rejected from normal generation |
+| Prompt injection in audio | Audio is untrusted data, no tools, fixed schemas, allowlisted IDs, semantic validation |
+| Model hallucinates medical advice | Prohibited-content and faithfulness validator; atomic fallback |
+| IDOR/account data exposure | Server user verification, RLS, ownership checks, encrypted sensitive fields |
+| Contact data enters AI/logs | Separate account and AI DTOs; redaction tests; no contact fields in prompt builder |
+| Secret leaks to client/repo | Server-only environment names, bundle scan, secret scan, `.env` ignore |
+| CSRF/open redirect | SameSite cookies, origin checks, redirect allowlist |
+| XSS | React text rendering, CSP, no unsafe HTML |
+| Abuse/cost exhaustion | Body bounds, HMAC rate limiting, provider deadlines, no retries |
+| Stale resource | Verification dates, build-time expiry test, release recheck |
+
+### 16.2 HTTP headers
+
+Production responses set:
+
+- Content Security Policy with `default-src 'self'`, no objects, no framing,
+  and explicit Supabase connection origins;
+- `X-Content-Type-Options: nosniff`;
+- `Referrer-Policy: strict-origin-when-cross-origin`;
+- `Permissions-Policy: camera=(), geolocation=(), microphone=(self)`;
+- `Strict-Transport-Security` in production;
+- `frame-ancestors 'none'` and `base-uri 'self'`.
+
+Next.js nonce handling must support its own scripts without weakening the
+policy to unrestricted inline execution.
+
+## 17. Accessibility and interaction standards
+
+The target is WCAG 2.2 AA plus stress-oriented usability.
+
+- One primary action per state and no more than three intervention steps.
+- Primary controls at least 48 × 48 CSS px.
+- Semantic landmarks, headings, fieldsets, legends, labels, lists, and links.
+- Complete keyboard and tap path; voice is optional.
+- Visible focus, logical focus order, modal focus trap/return, and Escape.
+- Status changes announced through appropriate live regions.
+- Text remains visible for all spoken output.
+- No color-only state; icons and explicit labels accompany color.
+- Body text at least 16 CSS px and correct 200% zoom/reflow.
+- `prefers-reduced-motion` removes nonessential motion.
+- Speech synthesis has explicit start/stop controls.
+- Microphone denial preserves all selections and never fabricates transcript.
+- Copy/share errors are visible and do not claim delivery.
+- Account authentication avoids memory tests, puzzles, or transcription
+  requirements.
+
+Narrow browser testing is an accessibility/reflow check, not a mobile-app
+deliverable.
+
+## 18. Code quality standards
+
+The code follows the Google TypeScript Style Guide where compatible with
+Next.js:
+
+- UTF-8, consistent imports, `import type`, lower camel case, and explicit
+  structural interfaces;
+- strict compiler settings including `noUncheckedIndexedAccess` and
+  `exactOptionalPropertyTypes`;
+- no `@ts-ignore`, `@ts-nocheck`, `eval`, dynamic function construction,
+  prototype mutation, or unsafe globals;
+- no unbounded `any`; unknown external input is parsed through runtime schemas;
+- public/non-obvious exports have concise JSDoc;
+- complex policy is pure and free of React/server dependencies;
+- errors use typed codes and do not depend on parsing message strings;
+- formatting, typecheck, lint, tests, and build are deterministic.
+
+Subsystem boundaries:
+
+- `domain/safety`: pure routing, action and emergency-script policy;
+- `domain/contracts`: TypeScript types and Zod schemas;
+- `domain/resources`: reviewed data and expiry rules;
+- `server/ai`: prompt builders, provider adapter, semantic validator;
+- `server/auth`: Supabase SSR and authenticated-user guard;
+- `server/crypto`: AES-GCM field encryption;
+- `server/data`: plan/contact repositories;
+- `ui/relay`: state machine and accessible presentation;
+- `platform/actions`: audio, speech, clipboard, share, and call adapters.
+
+## 19. Efficiency and performance budgets
+
+- Fixed emergency rendering: under 100 ms after explicit selection on a
+  supported loaded browser.
+- Tap-only model path: P95 under four seconds in the configured test account.
+- Optional-audio path: fallback by seven seconds.
+- Core Web Vitals targets at the 75th percentile: LCP ≤ 2.5 s, INP ≤ 200 ms,
+  CLS ≤ 0.1.
+- Initial route first-load JavaScript target: ≤ 200 KB gzip.
+- No client Supabase data query on public acute routes.
+- Source retrieval is a small static lookup, not a vector database.
+- No live web search, AI tool call, long history, provider retry loop, or
+  duplicate model request.
+- Dynamic imports isolate account and audio code from the landing route.
+
+## 20. Verification strategy
+
+### 20.1 Unit tests
+
+- Full deterministic safety truth table including `Not sure`.
+- Emergency precedence over intensity or requested goal.
+- Urgent-support cases and caregiver-safety cases.
+- Deterministic emergency script uses only confirmed facts.
+- Resource allowlist, jurisdiction, expiry, and disabled status.
+- Runtime schema bounds and exact keys.
+- Semantic validator: medical advice, false reassurance, confidence, invented
+  source, prompt injection, PII, URL/phone, and action hallucination.
+- Stable deterministic fallback.
+- AES-GCM round-trip, wrong-user associated-data failure, and key version.
+- External-action state transitions.
+
+### 20.2 Integration tests
+
+- Gemini valid structured output.
+- Timeout, quota/5xx, malformed JSON, extra keys, unsafe semantic content,
+  unknown source/action ID, and prompt injection.
+- Audio unsupported/oversized and interpreter safety recheck.
+- Auth callback and redirect allowlist.
+- Two-user RLS isolation.
+- Plan/contact ownership, encryption, export, clear, and cascade deletion.
+- Client bundle contains no server secret or service-role key.
+- Logs contain no request content or account data.
+
+### 20.3 End-to-end tests
+
+- Individual coping and urgent-support flows.
+- Caregiver support and caregiver-danger flows.
+- Emergency route renders 112 before any AI result.
+- Live AI and deterministic fallback.
+- Microphone denied, speech unavailable, copy failure, share cancelled.
+- Google OAuth test-user sign-in.
+- Save, reload, export, clear, and delete plan/contact data.
+- Delete account and verify data/session removal.
+- Keyboard-only, focus management, 200% zoom, reduced motion, desktop and
+  narrow-browser reflow.
+
+### 20.4 Release gate
+
+The release command runs:
+
+1. format check;
+2. TypeScript compiler;
+3. ESLint;
+4. unit/integration tests with focused coverage;
+5. production build;
+6. dependency audit;
+7. secret scan;
+8. Playwright journeys and axe checks;
+9. production smoke test;
+10. Sites worker-log inspection.
+
+No release may claim live AI, account persistence, offline behavior, external
+delivery, or clinical suitability without direct production evidence.
+
+## 21. Environment contract
+
+Public configuration:
+
+```text
+NEXT_PUBLIC_SITE_URL
+NEXT_PUBLIC_SUPABASE_URL
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
+```
+
+Server-only secrets:
+
+```text
+GEMINI_API_KEY
+GEMINI_MODEL=gemini-3.6-flash
+SUPABASE_SERVICE_ROLE_KEY
+CONTACT_DATA_KEY_V1
+CONTACT_DATA_KEY_VERSION=1
+RATE_LIMIT_HMAC_KEY
+```
+
+Non-secret release configuration:
+
+```text
+CONTENT_VERSION=2026-07-25
+PROMPT_INTERPRETER_VERSION=haven-interpreter-1
+PROMPT_COMPOSER_VERSION=haven-composer-1
+DEFAULT_JURISDICTION=IN
+DEMO_MODE=false
+```
+
+`.env.example` contains names and safe placeholders only. Real values exist in
+local untracked environment files and Sites production environment variables.
+
+## 22. Delivery sequence
+
+1. Commit this architecture by itself.
+2. Migrate the current visual spike into the Next.js/TypeScript boundaries.
+3. Implement deterministic safety and resource tests first.
+4. Implement Gemini schemas, prompts, validators, and fallback.
+5. Implement Supabase migrations, Google OAuth, encryption, and account APIs.
+6. Complete the public and account journeys.
+7. Run local quality, security, efficiency, testing, and accessibility gates.
+8. Authenticate and push the verified commit to the public GitHub repository.
+9. Create/configure Sites once and push the identical source commit.
+10. Save and publicly deploy the verified Sites version.
+11. Inspect production logs and exercise the full live/fallback/account paths.
+12. Update README and workspace index only with confirmed URLs and behavior.
+
+## 23. Stop-ship conditions
+
+- Any emergency route waits for Gemini, auth, Supabase, or network.
+- Any authored emergency fixture misses the 112 route.
+- Gemini can return medication, detox, first-aid, diagnosis, false reassurance,
+  or an invented resource/action.
+- A phone number or source is stale, mixed-jurisdiction, or unverified.
+- Raw crisis content, audio, contact data, or secrets appear in logs/bundles.
+- One authenticated user can access another user's row.
+- Contact details are stored unencrypted or enter a Gemini request.
+- Draft/share handoff is labelled sent, delivered, connected, or acknowledged.
+- The core journey requires voice, typing, account, or precise location.
+- Keyboard, screen-reader, focus, zoom/reflow, or reduced-motion gates fail.
+- The repository and deployed Sites version do not identify the same commit.
+- The release is described as a mobile app, medical device, clinically
+  validated service, treatment provider, or emergency dispatcher.
+
+## 24. Decision record
+
+| Decision | Choice | Reason |
 | --- | --- | --- |
-| Gemini key missing | reviewed fallback badge and complete card | emergency still local |
-| Provider timeout/quota/network error | reviewed fallback | no blank or endless spinner |
-| Invalid/unsafe model JSON | output discarded; fallback | unsafe partial text never renders |
-| Microphone unavailable/denied | explicit message; tap path continues | no fake transcript |
-| Speech synthesis unavailable | visible script remains | no claim that audio played |
-| Web Share unavailable | copy fallback | no delivery claim |
-| Clipboard unavailable | visible text remains | no false “copied” state |
-| Offline after shell cached | cached shell and local emergency data | call action still user-controlled |
-| Unknown or stale source | source excluded in a release update | model cannot invent replacement |
-| Modified client sends danger to API | server rejects request | provider cannot become safety authority |
-
-## 18. Observability
-
-The implemented app has no analytics or custom logging. If operational
-telemetry is added, permitted fields are limited to:
-
-- route name without user text;
-- provider success/failure category;
-- coarse latency bucket;
-- prompt/schema/application version;
-- fallback boolean;
-- client build version.
-
-Prohibited telemetry includes transcript, generated crisis text, selected
-health signals, phone numbers, local plan data, clipboard contents, precise
-location, IP-derived profiles, and user identifiers.
-
-## 19. Google engineering principles applied
-
-The implementation follows the relevant general principles used across Google
-web and cloud guidance:
-
-- least privilege and server-owned credentials;
-- defence in depth rather than prompt-only safety;
-- explicit, validated contracts at trust boundaries;
-- small pure domain functions with deterministic tests;
-- graceful degradation and honest capability states;
-- bounded work, deadlines, no unbounded retry, and no hidden side effects;
-- accessible semantic HTML and input alternatives;
-- data minimization and privacy by design;
-- source-controlled configuration and reproducible build commands;
-- observability without sensitive payload collection.
-
-This does not claim Google certification, endorsement, clinical validation, or
-compliance with an unspecified Google internal standard.
-
-## 20. Architecture decisions
-
-### ADR-001 — Browser-only web application
-
-**Decision:** ship React/Vite as a responsive website, not a native mobile app.
-
-**Reason:** the challenge requires rapid, low-friction access and multimodal
-browser capability, not app-store packaging. A browser build is faster to
-deploy, audit, and demo.
-
-### ADR-002 — Deterministic safety before Gemini
-
-**Decision:** code owns emergency routing.
-
-**Reason:** provider latency, hallucination, or downtime must never delay or
-downgrade explicit observable danger.
-
-### ADR-003 — One structured provider call
-
-**Decision:** use one server-owned Gemini call for the non-emergency artifact.
-
-**Reason:** it makes AI value visible while bounding latency, cost, injection
-surface, and failure handling.
-
-### ADR-004 — Static reviewed registry
-
-**Decision:** sources and phone numbers are application data.
-
-**Reason:** a model must never generate or alter crisis resources.
-
-### ADR-005 — No account or database
-
-**Decision:** urgent use is anonymous and session-local; the optional calm plan
-is device-local.
-
-**Reason:** identity and persistence add friction, privacy risk, and no required
-judge-visible value.
-
-### ADR-006 — Honest external actions
-
-**Decision:** use native call/share/copy intents only after review and a user
-gesture.
-
-**Reason:** Haven cannot observe delivery, acknowledgement, or service response
-and must not imply otherwise.
-
-### ADR-007 — System fonts and small dependency surface
-
-**Decision:** no remote font, UI framework, state library, or analytics SDK.
-
-**Reason:** reduce bundle/network cost, supply-chain surface, and offline
-failure points.
-
-## 21. Implemented, simulated, and future
-
-### Implemented
-
-- browser-only responsive application;
-- self and caregiver entry paths;
-- complete tap-only input;
-- optional browser speech recognition and read-aloud;
-- deterministic emergency/urgent/coping policy;
-- fixed 112 route and confirmed-facts dispatcher script;
-- server-owned Gemini structured-output adapter;
-- schema/source/semantic validators;
-- labelled deterministic fallback;
-- review-before-share and clipboard fallback;
-- India national resource registry with verification dates;
-- local calm-plan storage;
-- reduced-motion and responsive styles;
-- service-worker shell cache;
-- unit tests, production build, and Vercel configuration.
-
-### External user-controlled handoffs
-
-- phone calls;
-- OS share sheet;
-- clipboard;
-- official-source navigation.
-
-Haven does not know whether any of these actions completed.
-
-### Required before real-world use
-
-- qualified clinical, crisis, harm-reduction, privacy, accessibility, and
-  lived-experience review;
-- live resource re-verification and content ownership;
-- broader automated integration and end-to-end coverage;
-- provider-account configuration and quota verification;
-- accessibility assistive-technology testing;
-- security review and rate limiting appropriate to public traffic;
-- multilingual content review before claiming language support.
-
-## 22. Non-goals
-
-- diagnosis, treatment, prescribing, dosing, tapering, or detox planning;
-- camera analysis, emotion inference, intoxication detection, or passive audio;
-- automatic calls, messages, dispatch, monitoring, or location sharing;
-- clinical outcome claims;
-- treatment availability or appointment guarantees;
-- caregiver surveillance;
-- minors;
-- long-term records, a social graph, or an autonomous agent.
+| Form factor | Responsive browser app only | Meets the user's explicit no-mobile-app boundary |
+| Framework | Sites-supported Next.js App Router + TypeScript | Full-stack server boundary, SSR auth, production packaging, maintainability |
+| AI | Gemini 3.6 Flash structured output | Current stable Google model with multimodal and schema support |
+| Safety | Deterministic application policy | Model latency or error cannot own emergency action |
+| Retrieval | Static reviewed source registry | Faster, auditable, and safer than crisis-time web/vector search |
+| Persistence | Supabase Auth/Postgres | Google OAuth, RLS, clear user ownership and deletion |
+| Sensitive data | AES-256-GCM field encryption | Limits database disclosure impact for contacts and labels |
+| OAuth launch | Google testing mode | Allows verified first release before production brand approval |
+| Emergency data | Fixed India national pack | Complete national route without silent state/location inference |
+| Mobile/PWA | No manifest or service worker | Avoids packaging or representing the site as a mobile app |
+| Analytics | None | Not required for primary value; avoids crisis-data collection risk |
+| Deployment | Sites, exact source SHA | Versioned public production with source provenance |
 

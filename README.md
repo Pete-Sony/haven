@@ -1,10 +1,10 @@
 # Haven
 
-Haven is a browser-only, multi-modal recovery and prevention platform for
-adults navigating substance use disorders and the people who support them. It
-turns large tap choices and an optional short voice note into a bounded
-intervention, a personalized support script, verified educational context, and
-the next human handoff.
+Haven is a production, multi-modal recovery and prevention platform for adults
+navigating substance use disorders and the people who care for them. Large tap
+choices and an optional short voice note become a bounded intervention,
+personalized words for the next human conversation, reviewed educational
+context, and a clear safety handoff when cognitive load is highest.
 
 It is not an open-ended chatbot, diagnostic system, medical device, monitoring
 tool, or emergency dispatcher. Signed-in adults may use a bounded four-turn
@@ -53,65 +53,58 @@ outrank both lanes. Emergency routes bypass retrieval entirely.
 - official Google Gen AI SDK with Gemini 3.6 Flash structured output
 - Supabase Postgres provides email authentication, optional Google OAuth,
   atomic shared request budgets, and AES-256-GCM saved plans, Support Cards,
-  and support memories outside the core demo
+  daily habit check-ins, and support memories
 - Vitest, Playwright, axe-core, Oxlint, Prettier, and a repository secret scan
 - OpenAI Sites production hosting
 
 This is a conventional responsive web application. It intentionally contains
 no native-mobile package, install manifest, service worker, or PWA behavior.
 
-## Run locally
+## Production environment
 
-Use Node.js 24:
+Configure these values in the production hosting environment. Do not create or
+commit local environment files.
 
-```bash
-npm install
-npm run verify
-npm run test:e2e
-npm run dev
-```
-
-Without environment variables, the urgent journey remains complete and uses
-the reviewed fallback. Copy `.env.example` to `.env.local` to enable optional
-cloud features.
-
-## Environment
-
-| Variable                        | Required      | Purpose                              |
-| ------------------------------- | ------------- | ------------------------------------ |
-| `GEMINI_API_KEY`                | Optional      | Live bounded personalization         |
-| `NEXT_PUBLIC_SUPABASE_URL`      | Optional      | Saved-plan account endpoint          |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Optional      | Supabase PKCE/OAuth client           |
-| `GOOGLE_OAUTH_ENABLED`          | With OAuth    | Enables sign-in after provider setup |
-| `HAVEN_DATA_ENCRYPTION_KEY`     | With Supabase | 32-byte base64 AES key               |
-| `RATE_LIMIT_HMAC_KEY`           | Production    | Hashes budget identities             |
+| Variable                        | Required | Purpose                                                                |
+| ------------------------------- | -------- | ---------------------------------------------------------------------- |
+| `GEMINI_API_KEY`                | Yes      | Server-only bounded generation and voice transcription                 |
+| `NEXT_PUBLIC_SUPABASE_URL`      | Yes      | Supabase project URL used by authentication and account data           |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Yes      | Supabase publishable anonymous key; database RLS remains authoritative |
+| `HAVEN_DATA_ENCRYPTION_KEY`     | Yes      | Server-only 32-byte base64 AES-256 key for user-owned encrypted data   |
+| `RATE_LIMIT_HMAC_KEY`           | Yes      | Server-only high-entropy key for pseudonymous request-budget hashes    |
+| `GOOGLE_OAUTH_ENABLED`          | Yes      | Set to `true` only after Google OAuth and callback URLs are configured |
 
 The Gemini key and encryption key are server-only. Do not expose either with a
 `NEXT_PUBLIC_` prefix.
 
 ## Project map
 
-- [`architecture.md`](architecture.md): governing technical design and decision
-  record
-- [`app/`](app/): Next.js pages and server route handlers
-- [`components/`](components/): zero-typing journey, account onboarding, saved
-  plan, and bounded Voice Companion UI
-- [`lib/domain/`](lib/domain/): pure schemas, safety policy, fallback, and
-  allowlisted resources plus two-lane retrieval policy
-- [`lib/server/`](lib/server/): Gemini, Supabase, and encryption boundaries
+- `src/app/`: Next.js pages and route handlers
+- `src/features/`: acute support, accounts, companion, habits, plans, and
+  prevention interfaces
+- `src/domain/`: pure schemas, safety policy, fallback, reviewed resources, and
+  two-lane retrieval policy
+- `src/server/`: Gemini, Supabase, encryption, authentication, and rate-limit
+  boundaries
 - [`supabase/migrations/`](supabase/migrations/): RLS-protected database schema
-- [`tests/`](tests/): policy, security, contract, accessibility, and flow tests
+- `tests/unit/`: policy, security, prompt, retrieval, and contract regressions
+- `tests/e2e/`: production-browser journey and accessibility regressions
+- `docs/evidence/`: tracked verification and prompt-boundary evidence
+- `developer-docs/`: tracked architecture and atomic planning notes; the
+  multi-session `planning/Plan.md` checklist is intentionally local and ignored
 
 ## Verified commands
 
 `npm run verify` checks formatting, strict types, lint rules, unit/policy tests
 with coverage thresholds, secret patterns, a zero-high dependency audit, and
 the optimized production build.
-`npm run test:e2e` verifies the individual path, caregiver path, emergency
-route, narrow browser layout, and critical automated accessibility findings.
+`PLAYWRIGHT_BASE_URL=<production-or-preview-url> npm run test:e2e` verifies the
+individual path, caregiver path, emergency route, narrow browser layout, and
+critical automated accessibility findings against a deployed build.
 
 ## Notice
 
-Haven is a research and competition prototype for adults using an India
-reference configuration. Health and service content requires qualified review
-before real-world clinical use. In immediate danger in India, call 112.
+Haven supports adults using an India-first safety configuration. It does not
+diagnose, replace clinical care, or dispatch emergency services. Health and
+service content requires ongoing qualified review. In immediate danger in
+India, call 112.

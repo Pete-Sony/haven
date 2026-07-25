@@ -16,5 +16,6 @@ coverage/
 *.tsbuildinfo
 .env
 .env.local
+/developer-docs/planning/Plan.md
 *.log
 .DS_Store

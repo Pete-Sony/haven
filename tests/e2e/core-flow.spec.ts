@@ -3,12 +3,12 @@ import { expect, test } from "@playwright/test";
 
 test("individual completes a zero-typing support journey", async ({ page }) => {
   await page.goto("/");
-  await page.getByRole("button", { name: "Help for me" }).click();
+  await page.getByRole("button", { name: "Help me now" }).click();
   await page.getByRole("button", { name: /Social pressure/ }).click();
   await page.getByRole("button", { name: /Check safety/ }).click();
   await page.getByRole("button", { name: /Show the next step/ }).click();
   await expect(
-    page.getByText(/Reviewed fallback|Personalized with Gemini/),
+    page.getByText(/Reviewed fallback|Personalized with GenAI/),
   ).toBeVisible();
   await expect(page.getByText("Words you can use")).toBeVisible();
   await expect(
@@ -18,7 +18,7 @@ test("individual completes a zero-typing support journey", async ({ page }) => {
 
 test("caregiver path is judge-visible", async ({ page }) => {
   await page.goto("/");
-  await page.getByRole("button", { name: "Help for someone" }).click();
+  await page.getByRole("button", { name: "Help someone now" }).click();
   await expect(
     page.getByRole("heading", {
       name: "What are you noticing around them?",
@@ -49,7 +49,7 @@ test("prevention is a complete zero-typing, account-free journey", async ({
 
 test("observable danger routes immediately to 112", async ({ page }) => {
   await page.goto("/");
-  await page.getByRole("button", { name: "Help for me" }).click();
+  await page.getByRole("button", { name: "Help me now" }).click();
   await page.getByRole("button", { name: /Check safety/ }).click();
   await page.getByRole("button", { name: "Not breathing normally" }).click();
   await page.getByRole("button", { name: /Show the next step/ }).click();
@@ -72,13 +72,61 @@ test("landing page has no automatically detectable critical accessibility violat
   ).toEqual([]);
 });
 
+test("voice companion is prominent and never starts recording automatically", async ({
+  page,
+}) => {
+  await page.goto("/");
+  const headerCompanion = page
+    .getByRole("banner")
+    .getByRole("link", { name: "Talk to Haven" });
+  await expect(headerCompanion).toBeVisible();
+  await expect(headerCompanion).toHaveAttribute(
+    "href",
+    "/auth?next=/companion",
+  );
+  await expect(
+    page.getByRole("main").getByRole("link", { name: "Talk to Haven" }),
+  ).toHaveAttribute("href", "/auth?next=/companion");
+
+  await page.goto("/companion");
+  await expect(page.getByText(/Recording\./)).toHaveCount(0);
+});
+
+test("support and concern pages expose call actions, not website contacts", async ({
+  page,
+}) => {
+  await page.goto("/resources");
+  const resourceLinks = await page.locator(".resource-list a").all();
+  expect(resourceLinks.length).toBeGreaterThan(0);
+  for (const link of resourceLinks) {
+    await expect(link).toHaveAttribute("href", /^tel:/);
+  }
+  await expect(page.getByText("Open directory")).toHaveCount(0);
+
+  await page.goto("/report");
+  const reportLinks = await page.locator(".report-call-actions a").all();
+  expect(reportLinks.length).toBe(3);
+  for (const link of reportLinks) {
+    await expect(link).toHaveAttribute("href", /^tel:/);
+  }
+  await expect(page.locator('a[href*="github.com"]')).toHaveCount(0);
+});
+
+test("favicon assets are valid production responses", async ({ request }) => {
+  for (const asset of ["/favicon.ico", "/icon.png", "/apple-icon.png"]) {
+    const response = await request.get(asset);
+    expect(response.ok()).toBe(true);
+    expect(await response.body()).not.toHaveLength(0);
+  }
+});
+
 test("saved support features require an account without gating urgent help", async ({
   page,
 }) => {
   await page.goto("/companion");
   await expect(
     page.getByRole("heading", {
-      name: "Sign in to start a private session.",
+      name: "Sign in to speak instead of type.",
     }),
   ).toBeVisible();
   await expect(

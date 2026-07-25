@@ -39,12 +39,12 @@ The server prompt:
 
 The resource prototype exposed two failed patterns:
 
-| Failed behavior | Correction |
-| --- | --- |
-| Local templates were presented as “AI generated” with random confidence percentages | Provider and fallback states are explicit; confidence fields are absent and rejected by the contract |
-| A simulated caregiver button claimed an SMS was dispatched | The exact draft is reviewed first; only the native share sheet is opened; Haven never claims sent, delivered, or acknowledged |
-| Emergency resources were mixed into model-authored content | Emergency routing and all official resource metadata moved to deterministic application code |
-| Unsupported speech errors inserted fabricated transcript text | Speech failure now shows an error and preserves the full tap-only path |
+| Failed behavior                                                                     | Correction                                                                                                                    |
+| ----------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| Local templates were presented as “AI generated” with random confidence percentages | Provider and fallback states are explicit; confidence fields are absent and rejected by the contract                          |
+| A simulated caregiver button claimed an SMS was dispatched                          | The exact draft is reviewed first; only the native share sheet is opened; Haven never claims sent, delivered, or acknowledged |
+| Emergency resources were mixed into model-authored content                          | Emergency routing and all official resource metadata moved to deterministic application code                                  |
+| Unsupported speech errors inserted fabricated transcript text                       | Speech failure now shows an error and preserves the full tap-only path                                                        |
 
 ## Representative evaluation
 

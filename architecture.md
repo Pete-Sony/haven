@@ -1,4 +1,4 @@
-# Haven Relay Architecture
+# Haven Architecture
 
 **Status:** governing implementation architecture  
 **Product:** public, browser-based PromptWars application  
@@ -8,7 +8,7 @@
 
 ## 1. Purpose and source hierarchy
 
-This document is the engineering source of truth for Haven Relay. It defines
+This document is the engineering source of truth for Haven. It defines
 the product boundary, runtime topology, public contracts, deterministic safety
 authority, Gemini pipeline, cloud-account boundary, data model, privacy and
 security controls, verification gates, and release process.
@@ -16,10 +16,10 @@ security controls, verification gates, and release process.
 Implementation decisions must follow these sources in order:
 
 1. this architecture;
-2. [`README.md`](README.md), the Haven Relay product decision brief;
+2. [`README.md`](README.md), the Haven product decision brief;
 3. the workspace [`INDEX.md`](../INDEX.md);
 4. the indexed Haven research pack in
-   [`../resources/haven-recovery-resources/`](../resources/haven-recovery-resources/);
+   [`../resources/files/`](../resources/files/);
 5. the India-specific safety and evaluation documents in
    [`../resources/haven-recovery/docs/`](../resources/haven-recovery/docs/);
 6. the older Vite prototype only as visual and interaction reference.
@@ -30,7 +30,7 @@ leak U.S. phone numbers or claims into the release.
 
 ## 2. Locked product decisions
 
-- Haven Relay is a responsive web application, not a native mobile app.
+- Haven is a responsive web application, not a native mobile app.
 - It has no app-store package, native wrapper, install prompt, web-app
   manifest, or service worker.
 - The urgent and emergency journeys work without login.
@@ -83,15 +83,15 @@ Problem Statement Alignment and Code Quality are the primary design filters.
 Security and Efficiency follow. Testing and Accessibility remain release
 gates even when the evaluator assigns them lower score impact.
 
-| Evaluation area | Required evidence |
-| --- | --- |
+| Evaluation area             | Required evidence                                                                                                                                                                                                    |
+| --------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Problem Statement Alignment | One complete individual-to-human handoff plus caregiver emergency contrast visibly covers multimodality, GenAI, recovery, prevention, both roles, zero typing, emergency scripting, education, and contextual safety |
-| Code Quality | Strict TypeScript, small responsibility-focused modules, shared runtime schemas, pure policy functions, documented contracts, clean dependency graph, zero type/lint/build warnings |
-| Security | Server-only secrets, strict input/output validation, emergency defence in depth, RLS, encrypted contact fields, rate limiting, CSP, CSRF/origin checks, redacted logs |
-| Efficiency | Static source retrieval, bounded audio, no live search or AI tools, no automatic retry loop, server rendering by default, provider deadlines, small response and bundle budgets |
-| Testing | Safety truth table, validator/red-team fixtures, RLS isolation, account lifecycle, AI failure paths, end-to-end journeys, production smoke tests |
-| Accessibility | WCAG 2.2 AA target, complete keyboard/tap path, semantic controls, visible focus, status announcements, reflow, reduced motion, audio alternatives |
-| Google Services | Real Gemini 3.6 Flash structured output and Google OAuth materially support the experience; neither is decorative |
+| Code Quality                | Strict TypeScript, small responsibility-focused modules, shared runtime schemas, pure policy functions, documented contracts, clean dependency graph, zero type/lint/build warnings                                  |
+| Security                    | Server-only secrets, strict input/output validation, emergency defence in depth, RLS, encrypted contact fields, rate limiting, CSP, CSRF/origin checks, redacted logs                                                |
+| Efficiency                  | Static source retrieval, bounded audio, no live search or AI tools, no automatic retry loop, server rendering by default, provider deadlines, small response and bundle budgets                                      |
+| Testing                     | Safety truth table, validator/red-team fixtures, RLS isolation, account lifecycle, AI failure paths, end-to-end journeys, production smoke tests                                                                     |
+| Accessibility               | WCAG 2.2 AA target, complete keyboard/tap path, semantic controls, visible focus, status announcements, reflow, reduced motion, audio alternatives                                                                   |
+| Google Services             | Real Gemini 3.6 Flash structured output and Google OAuth materially support the experience; neither is decorative                                                                                                    |
 
 The judge-facing technical proof may show the policy tier, model ID, prompt
 version, source IDs, validator status, and fallback status. It must not show
@@ -101,7 +101,7 @@ chain-of-thought, secrets, raw audio, contact data, or sensitive user text.
 
 ```text
 Adult seeking support ─┐
-                       ├── HTTPS ──> Haven Relay public web app
+                       ├── HTTPS ──> Haven public web app
 Trusted supporter ─────┘                   │
                                           ├── deterministic safety policy
                                           ├── fixed India resource registry
@@ -155,35 +155,35 @@ The exact deployed source must match the public GitHub `main` commit.
 
 ### 6.3 External services
 
-| Service | Responsibility | Data boundary |
-| --- | --- | --- |
-| Gemini API | Context interpretation and bounded wording | Structured selections, optional short audio, relationship label, reviewed source claims; never phone number, contact name, precise location, or history |
-| Supabase Auth | Google OAuth and session identity | Google basic identity scopes only |
-| Supabase Postgres | User-owned calm plan and contacts | Encrypted contact name, phone, and safe-place label; structured non-sensitive preferences |
-| Sites | Next.js runtime, environment secrets, production versions, logs | Technical runtime metadata; application must not log user content |
-| GitHub | Public source history | No credentials, environment values, generated builds, or user data |
+| Service           | Responsibility                                                  | Data boundary                                                                                                                                           |
+| ----------------- | --------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Gemini API        | Context interpretation and bounded wording                      | Structured selections, optional short audio, relationship label, reviewed source claims; never phone number, contact name, precise location, or history |
+| Supabase Auth     | Google OAuth and session identity                               | Google basic identity scopes only                                                                                                                       |
+| Supabase Postgres | User-owned calm plan and contacts                               | Encrypted contact name, phone, and safe-place label; structured non-sensitive preferences                                                               |
+| Sites             | Next.js runtime, environment secrets, production versions, logs | Technical runtime metadata; application must not log user content                                                                                       |
+| GitHub            | Public source history                                           | No credentials, environment values, generated builds, or user data                                                                                      |
 
 ## 7. Information architecture and journeys
 
 ### 7.1 Public routes
 
-| Route | Purpose |
-| --- | --- |
-| `/` | Product explanation, role entry, safety limitations, resource summary |
-| `/relay` | Individual and caregiver zero-typing journey |
-| `/emergency` | Fixed India emergency renderer and base dispatcher script |
-| `/plan` | Calm-time plan editor; sign-in required only when saving |
-| `/resources` | Reviewed India national and optional Kerala sources |
-| `/privacy` | Data inventory, processor disclosure, retention, user controls |
-| `/terms` | Intended-use and product limitation terms |
-| `/report` | Minimal-data problem report that never interrupts emergency action |
+| Route        | Purpose                                                               |
+| ------------ | --------------------------------------------------------------------- |
+| `/`          | Product explanation, role entry, safety limitations, resource summary |
+| `/relay`     | Individual and caregiver zero-typing journey                          |
+| `/emergency` | Fixed India emergency renderer and base dispatcher script             |
+| `/plan`      | Calm-time plan editor; sign-in required only when saving              |
+| `/resources` | Reviewed India national and optional Kerala sources                   |
+| `/privacy`   | Data inventory, processor disclosure, retention, user controls        |
+| `/terms`     | Intended-use and product limitation terms                             |
+| `/report`    | Minimal-data problem report that never interrupts emergency action    |
 
 ### 7.2 Account routes
 
-| Route | Purpose |
-| --- | --- |
-| `/account` | Saved plan, trusted contacts, export, sign-out, delete account |
-| `/auth/callback` | Supabase PKCE code exchange and safe redirect |
+| Route            | Purpose                                                        |
+| ---------------- | -------------------------------------------------------------- |
+| `/account`       | Saved plan, trusted contacts, export, sign-out, delete account |
+| `/auth/callback` | Supabase PKCE code exchange and safe redirect                  |
 
 ### 7.3 Acute relay state machine
 
@@ -340,7 +340,7 @@ interface NormalizedFacts {
 interface InterventionResult {
   schemaVersion: "1.0";
   headline: string;
-  steps: Array<{actionId: string; label: string}>;
+  steps: Array<{ actionId: string; label: string }>;
   spokenSummary: string;
   verbatimScript: string;
   supportMessageDraft: string;
@@ -354,30 +354,25 @@ interface InterventionResult {
 }
 
 interface ExternalActionState {
-  state:
-    | "draft"
-    | "reviewed"
-    | "handoff_opened"
-    | "cancelled"
-    | "failed";
+  state: "draft" | "reviewed" | "handoff_opened" | "cancelled" | "failed";
 }
 ```
 
 ### 9.1 Server endpoints
 
-| Endpoint | Contract |
-| --- | --- |
-| `POST /api/interventions` | Bounded multipart request with serialized `SafetyInput` and optional audio; returns validated `InterventionResult`, `safety_recheck`, or typed fallback |
-| `POST /api/emergency-script` | Optional post-render wording assistance using confirmed facts and a fixed emergency decision |
-| `GET /api/account/plan` | Return the authenticated user's decrypted plan |
-| `PUT /api/account/plan` | Validate, encrypt, and upsert one active plan |
-| `DELETE /api/account/plan` | Delete the active plan |
-| `GET /api/account/contacts` | Return decrypted user-owned contacts |
-| `POST /api/account/contacts` | Validate, encrypt, and create a contact |
-| `PATCH /api/account/contacts/:id` | Update an authenticated user-owned contact |
-| `DELETE /api/account/contacts/:id` | Delete an authenticated user-owned contact |
-| `DELETE /api/account` | Cascade-delete saved data and Supabase identity |
-| `GET /api/health` | Release SHA and dependency readiness without secret values |
+| Endpoint                           | Contract                                                                                                                                                |
+| ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `POST /api/interventions`          | Bounded multipart request with serialized `SafetyInput` and optional audio; returns validated `InterventionResult`, `safety_recheck`, or typed fallback |
+| `POST /api/emergency-script`       | Optional post-render wording assistance using confirmed facts and a fixed emergency decision                                                            |
+| `GET /api/account/plan`            | Return the authenticated user's decrypted plan                                                                                                          |
+| `PUT /api/account/plan`            | Validate, encrypt, and upsert one active plan                                                                                                           |
+| `DELETE /api/account/plan`         | Delete the active plan                                                                                                                                  |
+| `GET /api/account/contacts`        | Return decrypted user-owned contacts                                                                                                                    |
+| `POST /api/account/contacts`       | Validate, encrypt, and create a contact                                                                                                                 |
+| `PATCH /api/account/contacts/:id`  | Update an authenticated user-owned contact                                                                                                              |
+| `DELETE /api/account/contacts/:id` | Delete an authenticated user-owned contact                                                                                                              |
+| `DELETE /api/account`              | Cascade-delete saved data and Supabase identity                                                                                                         |
+| `GET /api/health`                  | Release SHA and dependency readiness without secret values                                                                                              |
 
 All writes require expected origin, authenticated ownership where applicable,
 bounded bodies, runtime schemas, and typed errors. Stack traces and provider
@@ -493,10 +488,10 @@ interface ResourceRecord {
 
 ### 11.1 India national pack
 
-| ID | Action | Permitted tiers |
-| --- | --- | --- |
-| `in.erss.112` | Call 112 | emergency |
-| `in.nmba.14446` | Call 14446 | urgent support, coping |
+| ID                   | Action                           | Permitted tiers        |
+| -------------------- | -------------------------------- | ---------------------- |
+| `in.erss.112`        | Call 112                         | emergency              |
+| `in.nmba.14446`      | Call 14446                       | urgent support, coping |
 | `in.telemanas.14416` | Call 14416 or official alternate | urgent support, coping |
 
 ### 11.2 Optional Kerala pack
@@ -549,33 +544,33 @@ account.
 
 ### 13.1 `prevention_plans`
 
-| Column | Purpose |
-| --- | --- |
-| `user_id uuid primary key` | References `auth.users(id) on delete cascade` |
-| `trigger_ids text[]` | Allowlisted selected triggers |
-| `support_action_id text` | Allowlisted action |
-| `tone text` | Direct, warm, or minimal |
-| `language text` | `en-IN` |
-| `trusted_contact_id uuid null` | Optional user-owned contact |
-| `safe_place_ciphertext text null` | Encrypted user label |
-| `safe_place_iv text null` | Random AES-GCM IV |
-| `key_version smallint` | Encryption-key version |
-| `created_at`, `updated_at` | Server timestamps |
+| Column                            | Purpose                                       |
+| --------------------------------- | --------------------------------------------- |
+| `user_id uuid primary key`        | References `auth.users(id) on delete cascade` |
+| `trigger_ids text[]`              | Allowlisted selected triggers                 |
+| `support_action_id text`          | Allowlisted action                            |
+| `tone text`                       | Direct, warm, or minimal                      |
+| `language text`                   | `en-IN`                                       |
+| `trusted_contact_id uuid null`    | Optional user-owned contact                   |
+| `safe_place_ciphertext text null` | Encrypted user label                          |
+| `safe_place_iv text null`         | Random AES-GCM IV                             |
+| `key_version smallint`            | Encryption-key version                        |
+| `created_at`, `updated_at`        | Server timestamps                             |
 
 ### 13.2 `trusted_contacts`
 
-| Column | Purpose |
-| --- | --- |
-| `id uuid primary key` | Random identifier |
-| `user_id uuid` | References `auth.users(id) on delete cascade` |
-| `display_name_ciphertext text` | Encrypted name |
-| `display_name_iv text` | Random IV |
-| `phone_ciphertext text` | Encrypted normalized E.164 number |
-| `phone_iv text` | Random IV |
-| `relationship text` | Allowlisted relationship label |
-| `preferred_channel text` | Call or share draft |
-| `key_version smallint` | Encryption-key version |
-| `created_at`, `updated_at` | Server timestamps |
+| Column                         | Purpose                                       |
+| ------------------------------ | --------------------------------------------- |
+| `id uuid primary key`          | Random identifier                             |
+| `user_id uuid`                 | References `auth.users(id) on delete cascade` |
+| `display_name_ciphertext text` | Encrypted name                                |
+| `display_name_iv text`         | Random IV                                     |
+| `phone_ciphertext text`        | Encrypted normalized E.164 number             |
+| `phone_iv text`                | Random IV                                     |
+| `relationship text`            | Allowlisted relationship label                |
+| `preferred_channel text`       | Call or share draft                           |
+| `key_version smallint`         | Encryption-key version                        |
+| `created_at`, `updated_at`     | Server timestamps                             |
 
 ### 13.3 Private rate-limit state
 
@@ -661,18 +656,18 @@ Forbidden fields:
 
 ### 16.1 Threats and controls
 
-| Threat | Control |
-| --- | --- |
-| Modified client bypasses safety | Server independently validates and routes; emergency input rejected from normal generation |
-| Prompt injection in audio | Audio is untrusted data, no tools, fixed schemas, allowlisted IDs, semantic validation |
-| Model hallucinates medical advice | Prohibited-content and faithfulness validator; atomic fallback |
-| IDOR/account data exposure | Server user verification, RLS, ownership checks, encrypted sensitive fields |
-| Contact data enters AI/logs | Separate account and AI DTOs; redaction tests; no contact fields in prompt builder |
-| Secret leaks to client/repo | Server-only environment names, bundle scan, secret scan, `.env` ignore |
-| CSRF/open redirect | SameSite cookies, origin checks, redirect allowlist |
-| XSS | React text rendering, CSP, no unsafe HTML |
-| Abuse/cost exhaustion | Body bounds, HMAC rate limiting, provider deadlines, no retries |
-| Stale resource | Verification dates, build-time expiry test, release recheck |
+| Threat                            | Control                                                                                    |
+| --------------------------------- | ------------------------------------------------------------------------------------------ |
+| Modified client bypasses safety   | Server independently validates and routes; emergency input rejected from normal generation |
+| Prompt injection in audio         | Audio is untrusted data, no tools, fixed schemas, allowlisted IDs, semantic validation     |
+| Model hallucinates medical advice | Prohibited-content and faithfulness validator; atomic fallback                             |
+| IDOR/account data exposure        | Server user verification, RLS, ownership checks, encrypted sensitive fields                |
+| Contact data enters AI/logs       | Separate account and AI DTOs; redaction tests; no contact fields in prompt builder         |
+| Secret leaks to client/repo       | Server-only environment names, bundle scan, secret scan, `.env` ignore                     |
+| CSRF/open redirect                | SameSite cookies, origin checks, redirect allowlist                                        |
+| XSS                               | React text rendering, CSP, no unsafe HTML                                                  |
+| Abuse/cost exhaustion             | Body bounds, HMAC rate limiting, provider deadlines, no retries                            |
+| Stale resource                    | Verification dates, build-time expiry test, release recheck                                |
 
 ### 16.2 HTTP headers
 
@@ -883,18 +878,17 @@ local untracked environment files and Sites production environment variables.
 
 ## 24. Decision record
 
-| Decision | Choice | Reason |
-| --- | --- | --- |
-| Form factor | Responsive browser app only | Meets the user's explicit no-mobile-app boundary |
-| Framework | Sites-supported Next.js App Router + TypeScript | Full-stack server boundary, SSR auth, production packaging, maintainability |
-| AI | Gemini 3.6 Flash structured output | Current stable Google model with multimodal and schema support |
-| Safety | Deterministic application policy | Model latency or error cannot own emergency action |
-| Retrieval | Static reviewed source registry | Faster, auditable, and safer than crisis-time web/vector search |
-| Persistence | Supabase Auth/Postgres | Google OAuth, RLS, clear user ownership and deletion |
-| Sensitive data | AES-256-GCM field encryption | Limits database disclosure impact for contacts and labels |
-| OAuth launch | Google testing mode | Allows verified first release before production brand approval |
-| Emergency data | Fixed India national pack | Complete national route without silent state/location inference |
-| Mobile/PWA | No manifest or service worker | Avoids packaging or representing the site as a mobile app |
-| Analytics | None | Not required for primary value; avoids crisis-data collection risk |
-| Deployment | Sites, exact source SHA | Versioned public production with source provenance |
-
+| Decision       | Choice                                          | Reason                                                                      |
+| -------------- | ----------------------------------------------- | --------------------------------------------------------------------------- |
+| Form factor    | Responsive browser app only                     | Meets the user's explicit no-mobile-app boundary                            |
+| Framework      | Sites-supported Next.js App Router + TypeScript | Full-stack server boundary, SSR auth, production packaging, maintainability |
+| AI             | Gemini 3.6 Flash structured output              | Current stable Google model with multimodal and schema support              |
+| Safety         | Deterministic application policy                | Model latency or error cannot own emergency action                          |
+| Retrieval      | Static reviewed source registry                 | Faster, auditable, and safer than crisis-time web/vector search             |
+| Persistence    | Supabase Auth/Postgres                          | Google OAuth, RLS, clear user ownership and deletion                        |
+| Sensitive data | AES-256-GCM field encryption                    | Limits database disclosure impact for contacts and labels                   |
+| OAuth launch   | Google testing mode                             | Allows verified first release before production brand approval              |
+| Emergency data | Fixed India national pack                       | Complete national route without silent state/location inference             |
+| Mobile/PWA     | No manifest or service worker                   | Avoids packaging or representing the site as a mobile app                   |
+| Analytics      | None                                            | Not required for primary value; avoids crisis-data collection risk          |
+| Deployment     | Sites, exact source SHA                         | Versioned public production with source provenance                          |

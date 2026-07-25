@@ -1,230 +1,100 @@
-# Haven Relay
+# Haven
 
-**Status:** working browser-only PromptWars application with deterministic
-safety routing, optional server-owned Gemini personalization, reviewed fallback,
-India national resources, tests, offline emergency shell, and Vercel deployment
-configuration.
+Haven is a browser-only, multi-modal recovery and prevention platform for
+adults navigating substance use disorders and the people who support them. It
+turns large tap choices and an optional short voice note into a bounded
+intervention, a personalized support script, verified educational context, and
+the next human handoff.
 
-**Approach:** acute crisis-to-care relay.
+It is not a chatbot, diagnostic system, medical device, monitoring tool, or
+emergency dispatcher.
 
-## Challenge
+## Problem-statement alignment
 
-> Design and build a multi-modal, GenAI-powered recovery and prevention
-> platform that supports individuals navigating substance use disorders and
-> their caregivers. The solution must utilize generative AI as a core engine to
-> provide zero-typing interventions, personalized emergency scripts, backed by
-> educational resources, and contextual safety tools that empower users,
-> families when cognitive load is highest.
+| Requirement                    | Judge-visible implementation                                                                                                  |
+| ------------------------------ | ----------------------------------------------------------------------------------------------------------------------------- |
+| Multi-modal                    | Tap and optional voice input; visual, read-aloud, copy, call, and share-sheet output                                          |
+| GenAI-powered                  | Gemini 3.6 Flash converts structured context and optional audio facts into a validated intervention artifact                  |
+| Recovery and prevention        | Immediate intervention plus an optional encrypted future plan                                                                 |
+| Individuals and caregivers     | Dedicated self-support and caregiver paths                                                                                    |
+| Zero typing                    | The complete immediate journey uses large choices; voice is optional                                                          |
+| Personalized emergency scripts | The fixed 112 action appears immediately; Gemini may then personalize only the dispatcher wording from confirmed observations |
+| Educational resources          | Generated source IDs must resolve through the application allowlist                                                           |
+| Contextual safety              | Deterministic danger routing, fixed 112 action, explicit unknowns, and human-support escalation                               |
+| High cognitive load            | One decision group per screen, three steps maximum, large controls, plain language, and read-aloud                            |
 
-## Product thesis
+## Safety boundary
 
-Haven Relay turns a few large taps and an optional short voice statement into
-the next usable action, the words needed to ask a trusted person for help, and
-one verified explanation. It is not a chatbot, diagnostic system, therapist,
-or emergency dispatcher.
+Application code—not Gemini—assigns `emergency`, `urgent_support`, or `coping`.
+Observable danger renders the 112 route synchronously. Gemini cannot lower the
+risk tier, invent a phone number, diagnose, recommend medication or dosage,
+claim that someone is safe, or claim that an external action occurred.
 
-The design begins with the moment when attention, speech, and decision-making
-are most constrained. A deterministic safety gate owns emergency routing.
-Gemini is the core engine for interpreting non-emergency context and composing
-concise, person-first language.
+For non-emergency routes, Gemini structured output passes schema, action,
+source, length, and prohibited-language validation. Every provider, timeout,
+network, or validation failure returns a reviewed scenario-specific fallback.
 
-## Users, pain, and outcome
+## Stack
 
-### Primary user
+- Next.js App Router, React, strict TypeScript, and Zod
+- official Google Gen AI SDK with Gemini 3.6 Flash structured output
+- Supabase Google OAuth, Postgres RLS, and application-layer AES-256-GCM for
+  optional saved plans
+- Vitest, Playwright, axe-core, ESLint, Prettier, and a repository secret scan
+- OpenAI Sites production hosting
 
-An adult navigating substance use who is experiencing a strong craving, recent
-use concern, social pressure, or another high-load moment.
+This is a conventional responsive web application. It intentionally contains
+no native-mobile package, install manifest, service worker, or PWA behavior.
 
-### Caregiver
+## Run locally
 
-A trusted adult who needs observable, nonjudgmental guidance and the right
-words to offer support or contact human help.
-
-### Costly pain
-
-The current alternative is to unlock a phone, type an explanation, search
-multiple resources, decide which service is appropriate, and compose a message
-while concentration is lowest. A blank chatbot reproduces that burden.
-
-### Required outcome
-
-Within one short interaction, the person sees:
-
-1. the correct safety route;
-2. no more than three immediate actions;
-3. a speakable or shareable script;
-4. one verified educational source; and
-5. a prevention step for the next similar moment.
-
-## Why GenAI is core
-
-For non-emergency routes, Gemini converts structured taps and a user-approved
-voice transcript into:
-
-- a maximum-three-step intervention;
-- a self-advocacy or caregiver request in the selected tone;
-- a short explanation grounded in supplied source records;
-- an implementation intention for the next similar situation; and
-- source identifiers from an application-owned allowlist.
-
-Static templates remain the honest fallback, but they cannot naturally combine
-setting, trigger, role, support preference, relationship, language, tone, and
-short unstructured context. Gemini does not assign risk, invent facts, select
-phone numbers, or perform external actions.
-
-## Complete journey
-
-### Immediate recovery journey
-
-1. The user chooses **Help for me** or **Help for someone**.
-2. Large cards capture the current situation without a keyboard.
-3. The user may hold to add a short voice statement; voice is never required.
-4. Observable danger questions run before generation.
-5. On a non-emergency route, Gemini produces three short actions, a script,
-   read-aloud output, and one source-backed card.
-6. The user reviews and then copies, shares, reads, or calls. Opening another
-   app is never represented as message delivery.
-7. The person can ask a caregiver to stay connected for a specific action and
-   duration.
-
-### Emergency journey
-
-1. A selected observable sign such as not responding, seriously abnormal
-   breathing, collapse, seizure, or immediate physical danger triggers the
-   fixed emergency route.
-2. **Call 112 now** renders synchronously from application data.
-3. A safe base dispatcher script includes only confirmed facts and labels
-   location, substance, timing, or callback details as unknown when missing.
-4. Gemini may simplify or translate the confirmed script, but it cannot delay
-   the call action, add medical instructions, or alter the route.
-5. If the model or network is unavailable, the fixed route and base script
-   remain complete.
-
-### Prevention journey
-
-After the immediate action, the user may spend two minutes preparing:
-
-- one likely trigger;
-- one safer destination;
-- one preferred support action;
-- one trusted-person request; and
-- an “If this happens, I will…” plan stored only on the device after explicit
-  confirmation.
-
-The next high-load session can activate that plan in one tap.
-
-## Problem-statement traceability
-
-| Requirement | Judge-visible proof |
-| --- | --- |
-| Multi-modal | Tap and optional voice input; visual, read-aloud, copy, call, and share-preview output |
-| GenAI-powered | Gemini transforms combined structured and spoken context into a bounded intervention artifact |
-| Recovery and prevention | Immediate intervention followed by an optional prepared plan |
-| Individuals and caregivers | Self-support path, caregiver request, and caregiver emergency path |
-| Zero typing | Main journey completes with large choices; voice is optional |
-| Personalized emergency scripts | Confirmed facts populate a fixed safe script; Gemini may personalize language without controlling the action |
-| Educational resources | Every factual explanation resolves through an allowlisted source ID |
-| Contextual safety tools | Deterministic danger router, fixed 112 route, explicit unknowns, and worsening escape action |
-| Highest cognitive load | One decision per screen, three actions maximum, large controls, plain language, and spoken output |
-
-## Minimum interfaces and data flow
-
-Implemented stack: React and Vite, a server-owned Vercel function for Gemini
-structured output, a static reviewed resource registry, browser speech
-input/output, a service-worker emergency shell, and the native share sheet with
-copy fallback. No account, database, analytics SDK, camera, or location
-permission is used.
-
-```text
-tap choices + optional bounded transcript
-    -> deterministic safety decision
-        -> emergency: fixed 112 action + safe base script
-        -> non-emergency: POST /api/intervention
-            -> approved source retrieval
-            -> Gemini structured output
-            -> schema, source, length, and safety validation
-            -> intervention card or deterministic fallback
-```
-
-Minimum request:
-
-- role, situation, observable signs, whether alone, support preference,
-  language, tone, and optional bounded transcript.
-
-Minimum response:
-
-- safety tier, maximum-three-step plan, spoken summary, caregiver/self script,
-  source IDs, unknown facts, provider status, and fallback status.
-
-## Safety and resilience
-
-- Application code owns emergency, urgent-support, and coping tiers.
-- Emergency content never waits for AI, network, speech, location, or login.
-- The model cannot diagnose, provide medication/dosage/detox instructions,
-  invent services, claim safety, or claim that an external action occurred.
-- Source titles, numbers, URLs, jurisdiction, and verification dates come from
-  the application registry, never free-form model output.
-- No raw transcript, location, phone number, or generated crisis text enters
-  standard telemetry.
-- `DEMO_MODE=true` returns a clearly labelled reviewed fixture for the same
-  input and output contract.
-
-## Run and verify
-
-Use Node.js 20 or later:
+Use Node.js 24:
 
 ```bash
 npm install
 npm run verify
+npm run test:e2e
 npm run dev
 ```
 
-The application works without a model key and clearly labels its reviewed
-fallback. To enable live personalization, copy `.env.example` to `.env.local`
-and set `GEMINI_API_KEY`. The key is read only by `api/intervention.js`; never
-prefix it with `VITE_`.
+Without environment variables, the urgent journey remains complete and uses
+the reviewed fallback. Copy `.env.example` to `.env.local` to enable optional
+cloud features.
 
-The full technical design, boundaries, benchmark mapping, contracts, deployment
-model, and decision log are in [`architecture.md`](architecture.md).
+## Environment
 
-## Three-hour build blocks
+| Variable                        | Required      | Purpose                              |
+| ------------------------------- | ------------- | ------------------------------------ |
+| `GEMINI_API_KEY`                | Optional      | Live bounded personalization         |
+| `NEXT_PUBLIC_SUPABASE_URL`      | Optional      | Saved-plan account endpoint          |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Optional      | Supabase PKCE/OAuth client           |
+| `GOOGLE_OAUTH_ENABLED`          | With OAuth    | Enables sign-in after provider setup |
+| `HAVEN_DATA_ENCRYPTION_KEY`     | With Supabase | 32-byte base64 AES key               |
 
-| Time | Deliverable |
-| --- | --- |
-| 0:00–0:30 | Contracts, safety router, source registry, golden fixture, and deployed shell |
-| 0:30–1:05 | Zero-typing start, safety questions, and synchronous emergency route |
-| 1:05–1:40 | Server-owned Gemini intervention, structured validation, and fallback |
-| 1:40–2:10 | Result, read-aloud, caregiver preview, source card, and prevention action |
-| 2:10–2:30 | Focused router/provider/fallback tests and mobile accessibility fixes |
-| 2:30–3:00 | Production verification, fallback rehearsal, evidence, and pitch |
+The Gemini key and encryption key are server-only. Do not expose either with a
+`NEXT_PUBLIC_` prefix.
 
-## Concept score
+## Project map
 
-| User value | Visible AI | 3-hour feasibility | Demo reliability | Originality | Alignment | Total |
-| ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| 5 | 5 | 4 | 5 | 4 | 5 | **28/30** |
+- [`architecture.md`](architecture.md): governing technical design and decision
+  record
+- [`app/`](app/): Next.js pages and server route handlers
+- [`components/`](components/): zero-typing journey and saved-plan UI
+- [`lib/domain/`](lib/domain/): pure schemas, safety policy, fallback, and
+  allowlisted resources
+- [`lib/server/`](lib/server/): Gemini, Supabase, and encryption boundaries
+- [`supabase/migrations/`](supabase/migrations/): RLS-protected database schema
+- [`tests/`](tests/): policy, security, contract, accessibility, and flow tests
 
-## Top risks and mitigations
+## Verified commands
 
-| Risk | Mitigation |
-| --- | --- |
-| AI delays emergency action | Render the deterministic route before any provider call |
-| Generated medical overreach | Narrow schema, semantic validator, source allowlist, and fallback |
-| Voice fails in a noisy venue | Complete tap-only journey and prepared transcript fixture |
-| Sharing creates false reassurance | Explicit draft, handoff-opened, cancelled, and confirmed states |
-| Scope expands into care management | One journey, one provider call, no auth/database/maps |
+`npm run verify` checks formatting, strict types, lint rules, unit/policy tests
+with coverage thresholds, secret patterns, and the optimized production build.
+`npm run test:e2e` verifies the individual path, caregiver path, emergency
+route, narrow browser layout, and critical automated accessibility findings.
 
-## Non-goals
+## Notice
 
-- diagnosis, treatment selection, medication, dosage, taper, or detox advice;
-- camera or voice-tone inference;
-- autonomous dispatch, messaging, monitoring, or location sharing;
-- long-term records, social networking, live treatment availability, or
-  clinical-effectiveness claims.
-
-## Safety notice
-
-Haven Relay is a research and competition concept, not a medical device,
-clinical service, or substitute for emergency services or qualified care. The
-India reference configuration uses the official 112 emergency route; all
-health and service content requires qualified review before real-world use.
+Haven is a research and competition prototype for adults using an India
+reference configuration. Health and service content requires qualified review
+before real-world clinical use. In immediate danger in India, call 112.
